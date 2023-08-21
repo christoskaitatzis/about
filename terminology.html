@@ -35,6 +35,9 @@
 							<p>Description and examples of higher-order functions (operators):
 							<br>
 							<h3>Filter Operator (filter)</h3>
+							<p> - Use: To extract elements from a collection that satisfy a given condition.
+    							- Example: Filtering out even numbers from a list.
+								</p>
 							<pre>
 							<code>
 							val numbers = listOf(1, 2, 3, 4, 5, 6)
@@ -44,6 +47,8 @@
 							</pre>
 							
 							<h3>Map Operator (map)</h3>
+							    <p> - Use: To transform each element of a collection into a new form.
+    - Example: Converting a list of names to their corresponding lengths.</p>
 							<pre>
 							<code>
 							val names = listOf("Alice", "Bob", "Charlie")
@@ -51,45 +56,50 @@
 							// Output: nameLengths = [5, 3, 7]
 							</code>
 							</pre>
-							3. **Reduce Operator (`reduce` or `fold`)**:
-							   - Use: To accumulate values in a collection to a single result.
-							   - Example: Calculating the sum of all numbers in a list.
-							
-							   ```kotlin
-							   val numbers = listOf(1, 2, 3, 4, 5)
-							   val sum = numbers.reduce { acc, number -> acc + number }
-							   // Output: sum = 15
-							   ```
-							<br>
-							4. **FlatMap Operator (`flatMap`)**:
-							   - Use: To transform each element into a collection and then flatten the results.
-							   - Example: Extracting all unique characters from a list of words.
-							
-							   ```kotlin
-							   val words = listOf("hello", "world")
-							   val uniqueChars = words.flatMap { it.toCharArray().toList() }.toSet()
-							   // Output: uniqueChars = [h, e, l, o, w, r, d]
-							   ```
-							<br>
-							5. **Any Operator (`any`)**:
+							<h3>Reduce Operator (reduce or fold)</h3>
+<p> - Use: To accumulate values in a collection to a single result.
+- Example: Calculating the sum of all numbers in a list.</p>
+<pre>
+<code>
+val numbers = listOf(1, 2, 3, 4, 5)
+val sum = numbers.reduce { acc, number -> acc + number }
+// Output: sum = 15
+</code>
+</pre>
+
+<h3>FlatMap Operator (flatMap)</h3>
+<p> - Use: To transform each element into a collection and then flatten the results.
+- Example: Extracting all unique characters from a list of words.</p>
+<pre>
+<code>
+val words = listOf("hello", "world")
+val uniqueChars = words.flatMap { it.toCharArray().toList() }.toSet()
+// Output: uniqueChars = [h, e, l, o, w, r, d]
+</code>
+</pre>
+							<h3>5. **Any Operator (`any`):</h3>
 							   - Use: To check if at least one element in a collection satisfies a condition.
 							   - Example: Checking if any student in a list has passed the exam.
 							
-							   ```kotlin
+							   <pre>
+<code>
 							   val students = listOf(Student("Alice", true), Student("Bob", false))
 							   val anyPassed = students.any { it.passed }
 							   // Output: anyPassed = true
-							   ```
+							   </code>
+</pre>
 							<br>
-							6. **All Operator (`all`)**:
+							<h3>6. **All Operator (`all`):</h3>
 							   - Use: To check if all elements in a collection satisfy a condition.
 							   - Example: Verifying if all tasks in a to-do list are completed.
 							
-							   ```kotlin
+							   							   <pre>
+<code>
 							   val tasks = listOf(Task("Write code", true), Task("Test application", true))
 							   val allCompleted = tasks.all { it.completed }
 							   // Output: allCompleted = true
-							   ```
+							     </code>
+</pre>
 							<br>
 							7. **None Operator (`none`)**:
 							   - Use: To check if no elements in a collection satisfy a condition.
