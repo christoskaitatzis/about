@@ -34,26 +34,23 @@
 							<h4>Kotlin operators</h4>
 							<p>Description and examples of higher-order functions (operators):
 							<br>
-							1. **Filter Operator (`filter`)**:
-							   - Use: To extract elements from a collection that satisfy a given condition.
-							   - Example: Filtering out even numbers from a list.
+							<h3>Filter Operator (filter)</h3>
+							<pre>
+							<code>
+							val numbers = listOf(1, 2, 3, 4, 5, 6)
+							val evenNumbers = numbers.filter { it % 2 == 0 }
+							// Output: evenNumbers = [2, 4, 6]
+							</code>
+							</pre>
 							
-							   ```kotlin
-							   val numbers = listOf(1, 2, 3, 4, 5, 6)
-							   val evenNumbers = numbers.filter { it % 2 == 0 }
-							   // Output: evenNumbers = [2, 4, 6]
-							   ```
-							<br>
-							2. **Map Operator (`map`)**:
-							   - Use: To transform each element of a collection into a new form.
-							   - Example: Converting a list of names to their corresponding lengths.
-							
-							   ```kotlin
-							   val names = listOf("Alice", "Bob", "Charlie")
-							   val nameLengths = names.map { it.length }
-							   // Output: nameLengths = [5, 3, 7]
-							   ```
-							<br>
+							<h3>Map Operator (map)</h3>
+							<pre>
+							<code>
+							val names = listOf("Alice", "Bob", "Charlie")
+							val nameLengths = names.map { it.length }
+							// Output: nameLengths = [5, 3, 7]
+							</code>
+							</pre>
 							3. **Reduce Operator (`reduce` or `fold`)**:
 							   - Use: To accumulate values in a collection to a single result.
 							   - Example: Calculating the sum of all numbers in a list.
