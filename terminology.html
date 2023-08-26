@@ -296,7 +296,65 @@ val uniqueChars = words.flatMap { it.toCharArray().toList() }.toSet()
 						</div>
 					</section>
 
+					<section id="main" class="wrapper">
+						<div class="inner">
+							<h3 class="major">MVI Model View Intent Example</h2>
+							<p>Organizing an Android app based on the Model-View-Intent (MVI) architectural pattern involves structuring your code into directories that correspond to the different components of the pattern. This helps maintain a clear separation of concerns and makes it easier to navigate and understand the codebase. Here's how we could organize our MVI-based Android app.</p>
+							<p>    Model: Represents the application's state.<br>data class CounterViewState(val count: Int) </p>
+							<p>View: Displays the UI and observes the state changes:<br> class CounterActivity : AppCompatActivity() {
+    private val viewModel: CounterViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_counter)
+
+        incrementButton.setOnClickListener {
+            viewModel.processIntent(CounterIntent.Increment)
+        }
+
+        viewModel.state.observe(this) { state ->
+            countTextView.text = state.count.toString()
+        }
+    }
+}
+</p>
+<p>    Intent: Represents user actions or intentions.<br>
+
+kotlin
+
+sealed class CounterIntent {
+    object Increment : CounterIntent()
+}
+
+    ViewModel: Handles business logic and state updates.
+
+kotlin
+
+class CounterViewModel : ViewModel() {
+    private val _state = MutableLiveData<CounterViewState>()
+    val state: LiveData<CounterViewState> = _state
+
+    init {
+        _state.value = CounterViewState(0)
+    }
+
+    fun processIntent(intent: CounterIntent) {
+        when (intent) {
+            is CounterIntent.Increment -> {
+                val currentState = _state.value ?: CounterViewState(0)
+                val updatedState = currentState.copy(count = currentState.count + 1)
+                _state.value = updatedState
+            }
+        }
+    }
+}
+								
+							</p>
+							
+
 			</div>
+
+		</section>
 
 		<!-- Footer -->
 			<footer id="footer" class="wrapper alt">
