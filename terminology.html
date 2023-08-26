@@ -105,31 +105,31 @@ val uniqueChars = words.flatMap { it.toCharArray().toList() }.toSet()
 							   - Use: To check if no elements in a collection satisfy a condition.
 							   - Example: Confirming that no errors occurred during a data validation process.
 							
-							   ```kotlin
+							    <pre>
 							   val errors = listOf(Error("404"), Error("500"))
 							   val noErrors = errors.none { it.isCritical }
 							   // Output: noErrors = false
-							   ```
+							    </code>
 							<br>
 							8. **Count Operator (`count`)**:
 							   - Use: To count the number of elements that satisfy a condition.
 							   - Example: Counting the number of occurrences of a certain item in a shopping cart.
 							
-							   ```kotlin
+							     <pre>
 							   val cart = listOf("apple", "banana", "apple", "orange")
 							   val appleCount = cart.count { it == "apple" }
 							   // Output: appleCount = 2
-							   ```
+							    </code>
 							<br>
 							9. **Find Operator (`find`)**:
 							   - Use: To locate the first element that satisfies a condition.
 							   - Example: Finding the first available product in a list of products.
 							
-							   ```kotlin
+							     <pre>
 							   val products = listOf(Product("Apple", true), Product("Banana", false))
 							   val availableProduct = products.find { it.available }
 							   // Output: availableProduct = Product("Apple", true)
-							   ```
+							     </code>
 							<br>
 							10. **First and Last Operators (`first` and `last`)**:
 							    - Use: To retrieve the first or last element in a collection.
