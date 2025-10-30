@@ -27,13 +27,13 @@
       <div class="inner">
         <h2 class="major">Various topics</h2>
 
-        <h4>Kotlin operators</h4>
+        <h4>Kotlin Operators</h4>
         <p>Description and examples of higher-order functions (operators):</p>
 
         <!-- 1 -->
-        <h3>Filter Operator (<code>filter</code>)</h3>
+        <h3>1. Filter Operator (<code>filter</code>)</h3>
         <p>Use: To extract elements from a collection that satisfy a given condition.<br>
-          Example: Filtering out even numbers from a list.</p>
+        Example: Filtering out even numbers from a list.</p>
         <pre><code>
 val numbers = listOf(1, 2, 3, 4, 5, 6)
 val evenNumbers = numbers.filter { it % 2 == 0 }
@@ -41,9 +41,9 @@ val evenNumbers = numbers.filter { it % 2 == 0 }
         </code></pre>
 
         <!-- 2 -->
-        <h3>Map Operator (<code>map</code>)</h3>
+        <h3>2. Map Operator (<code>map</code>)</h3>
         <p>Use: To transform each element of a collection into a new form.<br>
-          Example: Converting a list of names to their corresponding lengths.</p>
+        Example: Converting a list of names to their corresponding lengths.</p>
         <pre><code>
 val names = listOf("Alice", "Bob", "Charlie")
 val nameLengths = names.map { it.length }
@@ -51,9 +51,9 @@ val nameLengths = names.map { it.length }
         </code></pre>
 
         <!-- 3 -->
-        <h3>Reduce Operator (<code>reduce</code> or <code>fold</code>)</h3>
+        <h3>3. Reduce Operator (<code>reduce</code> / <code>fold</code>)</h3>
         <p>Use: To accumulate values in a collection to a single result.<br>
-          Example: Calculating the sum of all numbers in a list.</p>
+        Example: Calculating the sum of all numbers in a list.</p>
         <pre><code>
 val numbers = listOf(1, 2, 3, 4, 5)
 val sum = numbers.reduce { acc, number -> acc + number }
@@ -61,9 +61,9 @@ val sum = numbers.reduce { acc, number -> acc + number }
         </code></pre>
 
         <!-- 4 -->
-        <h3>FlatMap Operator (<code>flatMap</code>)</h3>
+        <h3>4. FlatMap Operator (<code>flatMap</code>)</h3>
         <p>Use: To transform each element into a collection and then flatten the results.<br>
-          Example: Extracting all unique characters from a list of words.</p>
+        Example: Extracting all unique characters from a list of words.</p>
         <pre><code>
 val words = listOf("hello", "world")
 val uniqueChars = words.flatMap { it.toCharArray().toList() }.toSet()
@@ -71,9 +71,9 @@ val uniqueChars = words.flatMap { it.toCharArray().toList() }.toSet()
         </code></pre>
 
         <!-- 5 -->
-        <h3>Any Operator (<code>any</code>)</h3>
+        <h3>5. Any Operator (<code>any</code>)</h3>
         <p>Use: To check if at least one element in a collection satisfies a condition.<br>
-          Example: Checking if any student in a list has passed the exam.</p>
+        Example: Checking if any student in a list has passed the exam.</p>
         <pre><code>
 val students = listOf(Student("Alice", true), Student("Bob", false))
 val anyPassed = students.any { it.passed }
@@ -81,19 +81,19 @@ val anyPassed = students.any { it.passed }
         </code></pre>
 
         <!-- 6 -->
-        <h3>All Operator (<code>all</code>)</h3>
+        <h3>6. All Operator (<code>all</code>)</h3>
         <p>Use: To check if all elements in a collection satisfy a condition.<br>
-          Example: Verifying if all tasks in a to-do list are completed.</p>
+        Example: Verifying if all tasks in a to-do list are completed.</p>
         <pre><code>
-val tasks = listOf(Task("Write code", true), Task("Test application", true))
+val tasks = listOf(Task("Write code", true), Task("Test app", true))
 val allCompleted = tasks.all { it.completed }
 // Output: allCompleted = true
         </code></pre>
 
         <!-- 7 -->
-        <h3>None Operator (<code>none</code>)</h3>
+        <h3>7. None Operator (<code>none</code>)</h3>
         <p>Use: To check if no elements in a collection satisfy a condition.<br>
-          Example: Confirming that no errors occurred during data validation.</p>
+        Example: Confirming that no errors occurred during validation.</p>
         <pre><code>
 val errors = listOf(Error("404"), Error("500"))
 val noErrors = errors.none { it.isCritical }
@@ -101,9 +101,9 @@ val noErrors = errors.none { it.isCritical }
         </code></pre>
 
         <!-- 8 -->
-        <h3>Count Operator (<code>count</code>)</h3>
+        <h3>8. Count Operator (<code>count</code>)</h3>
         <p>Use: To count the number of elements that satisfy a condition.<br>
-          Example: Counting the number of occurrences of a certain item in a shopping cart.</p>
+        Example: Counting how many apples are in a shopping cart.</p>
         <pre><code>
 val cart = listOf("apple", "banana", "apple", "orange")
 val appleCount = cart.count { it == "apple" }
@@ -111,9 +111,9 @@ val appleCount = cart.count { it == "apple" }
         </code></pre>
 
         <!-- 9 -->
-        <h3>Find Operator (<code>find</code>)</h3>
+        <h3>9. Find Operator (<code>find</code>)</h3>
         <p>Use: To locate the first element that satisfies a condition.<br>
-          Example: Finding the first available product in a list of products.</p>
+        Example: Finding the first available product in a list.</p>
         <pre><code>
 val products = listOf(Product("Apple", true), Product("Banana", false))
 val availableProduct = products.find { it.available }
@@ -121,35 +121,223 @@ val availableProduct = products.find { it.available }
         </code></pre>
 
         <!-- 10 -->
-        <h3>First and Last Operators (<code>first</code> and <code>last</code>)</h3>
-        <p>Use: To retrieve the first or last element in a collection.<br>
-          Example: Getting the earliest and latest dates in a list of appointments.</p>
+        <h3>10. First and Last Operators (<code>first</code>, <code>last</code>)</h3>
+        <p>Use: To get the first or last element of a list.<br>
+        Example: Getting earliest and latest appointments.</p>
         <pre><code>
 val appointments = listOf(
     Appointment("Meeting 1", LocalDateTime.of(2023, 8, 21, 10, 0)),
     Appointment("Meeting 2", LocalDateTime.of(2023, 8, 21, 15, 0))
 )
-val earliestAppointment = appointments.first()
-val latestAppointment = appointments.last()
-// Output: earliestAppointment = Meeting 1, latestAppointment = Meeting 2
+val earliest = appointments.first()
+val latest = appointments.last()
+// Output: Meeting 1, Meeting 2
         </code></pre>
 
-        <!-- Continue similar pattern for 11–19... -->
-        <!-- (omitted here for brevity, but same structure) -->
+        <!-- 11 -->
+        <h3>11. Take Operator (<code>take</code>)</h3>
+        <p>Use: To extract a specific number of elements from the beginning of a collection.</p>
+        <pre><code>
+val feed = listOf("Post 1", "Post 2", "Post 3", "Post 4")
+val firstTwo = feed.take(2)
+// Output: ["Post 1", "Post 2"]
+        </code></pre>
+
+        <!-- 12 -->
+        <h3>12. Drop Operator (<code>drop</code>)</h3>
+        <p>Use: To remove a specific number of elements from the beginning of a collection.</p>
+        <pre><code>
+val pages = listOf("Page 1", "Page 2", "Page 3", "Page 4")
+val nextPage = pages.drop(2)
+// Output: ["Page 3", "Page 4"]
+        </code></pre>
+
+        <!-- 13 -->
+        <h3>13. Sorted Operator (<code>sorted</code>)</h3>
+        <p>Use: To sort elements in a collection based on a criterion.</p>
+        <pre><code>
+val products = listOf(
+    Product("Apple", 1.0),
+    Product("Banana", 0.75),
+    Product("Orange", 1.5)
+)
+val sortedByPrice = products.sortedBy { it.price }
+// Output: [Banana, Apple, Orange]
+        </code></pre>
+
+        <!-- 14 -->
+        <h3>14. GroupBy Operator (<code>groupBy</code>)</h3>
+        <p>Use: To group elements in a collection by key or property.</p>
+        <pre><code>
+val employees = listOf(
+    Employee("Alice", "HR"),
+    Employee("Bob", "Engineering"),
+    Employee("Charlie", "HR"),
+    Employee("David", "Engineering")
+)
+val grouped = employees.groupBy { it.department }
+// Output: {HR=[Alice, Charlie], Engineering=[Bob, David]}
+        </code></pre>
+
+        <!-- 15 -->
+        <h3>15. Partition Operator (<code>partition</code>)</h3>
+        <p>Use: To split a collection into two lists based on a condition.</p>
+        <pre><code>
+val orders = listOf(
+    Order("Order 1", true),
+    Order("Order 2", false),
+    Order("Order 3", true)
+)
+val (completed, pending) = orders.partition { it.completed }
+// Output: completed = [Order 1, Order 3], pending = [Order 2]
+        </code></pre>
+
+        <!-- 16 -->
+        <h3>16. Associate Operator (<code>associate</code>)</h3>
+        <p>Use: To build a map from a collection.</p>
+        <pre><code>
+val products = listOf(
+    Product("Apple", 1.0),
+    Product("Banana", 0.75),
+    Product("Orange", 1.5)
+)
+val productMap = products.associate { it.name to it.price }
+// Output: {Apple=1.0, Banana=0.75, Orange=1.5}
+        </code></pre>
+
+        <!-- 17 -->
+        <h3>17. Zip Operator (<code>zip</code>)</h3>
+        <p>Use: To combine two lists element-wise.</p>
+        <pre><code>
+val students = listOf("Alice", "Bob", "Charlie")
+val grades = listOf(85, 92, 78)
+val pairs = students.zip(grades)
+// Output: [("Alice", 85), ("Bob", 92), ("Charlie", 78)]
+        </code></pre>
+
+        <!-- 18 -->
+        <h3>18. Distinct Operator (<code>distinct</code>)</h3>
+        <p>Use: To remove duplicates from a collection.</p>
+        <pre><code>
+val emails = listOf("user@example.com", "admin@example.com", "user@example.com")
+val unique = emails.distinct()
+// Output: ["user@example.com", "admin@example.com"]
+        </code></pre>
+
+        <!-- 19 -->
+        <h3>19. MaxBy / MinBy Operators (<code>maxByOrNull</code>, <code>minByOrNull</code>)</h3>
+        <p>Use: To find the element with max or min property value.</p>
+        <pre><code>
+val temps = listOf(
+    TemperatureRecord("Morning", 20.5),
+    TemperatureRecord("Afternoon", 25.0),
+    TemperatureRecord("Evening", 18.5)
+)
+val hottest = temps.maxByOrNull { it.temperature }
+val coldest = temps.minByOrNull { it.temperature }
+// Output: Afternoon (25.0), Evening (18.5)
+        </code></pre>
+
+        <h4>Basics</h4>
+        <p><b>IDE:</b> Integrated Development Environment...</p>
+        <p><b>API:</b> Application Programming Interface...</p>
+        <p><b>SDK:</b> Software Development Kit...</p>
+        <p><b>UI:</b> User Interface...</p>
+        <p><b>UX:</b> User Experience...</p>
+        <p><b>JSON:</b> JavaScript Object Notation...</p>
+        <p><b>XML:</b> Extensible Markup Language...</p>
+        <p><b>HTTP:</b> Hypertext Transfer Protocol...</p>
+        <p><b>MVC:</b> Model-View-Controller...</p>
+        <p><b>OOP:</b> Object-Oriented Programming...</p>
+
+        <h4>Advanced</h4>
+        <p><b>ORM:</b> Object-Relational Mapping...</p>
+        <p><b>REST:</b> Representational State Transfer...</p>
+        <p><b>SQLite:</b> Lightweight Embedded Database...</p>
+        <p><b>Dagger:</b> Dependency Injection Framework...</p>
+        <p><b>Gradle:</b> Build Automation Tool...</p>
+        <p><b>Flutter:</b> Cross-platform UI Framework...</p>
+        <p><b>RxJava:</b> Reactive Extensions for Java...</p>
+        <p><b>Retrofit:</b> HTTP Client Library...</p>
+        <p><b>Push Notification:</b> Real-time Message Delivery...</p>
+        <p><b>Core Data:</b> Data Persistence Framework (iOS)...</p>
+        <p><b>Dagger Hilt:</b> Dependency Injection Library (Android)...</p>
+        <p><b>GraphQL:</b> Query Language for APIs...</p>
+        <p><b>CI/CD:</b> Continuous Integration/Continuous Deployment...</p>
+        <p><b>Proguard/R8:</b> Code Obfuscation and Shrinking...</p>
+        <p><b>Firebase Analytics:</b> App Usage Tracking...</p>
+        <p><b>NDK:</b> Native Development Kit...</p>
+        <p><b>MVVM:</b> Model-View-ViewModel...</p>
+        <p><b>Reactive Programming:</b> RxSwift, RxCocoa (iOS)...</p>
+        <p><b>Security Best Practices:</b> Encryption, SSL Pinning...</p>
+        <p><b>Accessibility:</b> Making Apps Inclusive...</p>
+
       </div>
     </section>
 
-    <!-- Footer -->
-    <footer id="footer" class="wrapper alt">
+    <section id="main" class="wrapper">
       <div class="inner">
-        <ul class="menu">
-          <li>&copy; Untitled. All rights reserved.</li>
-          <li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
-        </ul>
+        <h3 class="major">MVI Model-View-Intent Example</h3>
+        <p>Organizing an Android app based on the MVI pattern:</p>
+        <pre><code>
+// Model
+data class CounterViewState(val count: Int)
+
+// View (Activity)
+class CounterActivity : AppCompatActivity() {
+    private val viewModel: CounterViewModel by viewModels()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_counter)
+
+        incrementButton.setOnClickListener {
+            viewModel.processIntent(CounterIntent.Increment)
+        }
+
+        viewModel.state.observe(this) { state ->
+            countTextView.text = state.count.toString()
+        }
+    }
+}
+
+// Intent
+sealed class CounterIntent {
+    object Increment : CounterIntent()
+}
+
+// ViewModel
+class CounterViewModel : ViewModel() {
+    private val _state = MutableLiveData<CounterViewState>()
+    val state: LiveData<CounterViewState> = _state
+
+    init {
+        _state.value = CounterViewState(0)
+    }
+
+    fun processIntent(intent: CounterIntent) {
+        when (intent) {
+            is CounterIntent.Increment -> {
+                val current = _state.value ?: CounterViewState(0)
+                _state.value = current.copy(count = current.count + 1)
+            }
+        }
+    }
+}
+        </code></pre>
       </div>
-    </footer>
+    </section>
 
   </div>
+
+  <!-- Footer -->
+  <footer id="footer" class="wrapper alt">
+    <div class="inner">
+      <ul class="menu">
+        <li>&copy; Untitled. All rights reserved.</li>
+        <li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+      </ul>
+    </div>
+  </footer>
 
   <!-- Scripts -->
   <script src="assets/js/jquery.min.js"></script>
