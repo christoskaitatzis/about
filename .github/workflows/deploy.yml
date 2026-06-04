@@ -18,8 +18,8 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm install
-      - run: npm run build
+      - run: npm ci
+      - run: npx vite build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
