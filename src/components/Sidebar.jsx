@@ -18,9 +18,6 @@ export default function Sidebar({ active }) {
         <div className="w-12 h-12 rounded-full bg-slate-200 flex-shrink-0" />
         <div>
           <div className="text-slate-900 font-semibold text-sm leading-tight">Christos</div>
-          <div className="text-slate-400 text-[0.65rem] tracking-[0.18em] uppercase mt-1">
-            V6.0 — Senior
-          </div>
         </div>
       </div>
 
