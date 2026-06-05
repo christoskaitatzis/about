@@ -1,113 +1,123 @@
-// components/FacetSeparator.jsx
 export default function FacetSeparator() {
   return (
-    <div className="w-full py-12 overflow-hidden">
+    <div
+      style={{
+        position: "relative",
+        height: 180,
+        overflow: "hidden",
+      }}
+    >
       <style>{`
-        .peak {
-          transform-box: fill-box;
+        .wave {
           transform-origin: center bottom;
+          will-change: transform;
         }
 
-        .peak-1 {
-          animation: breathe1 14s ease-in-out infinite;
+        .wave-1 {
+          animation:
+            drift1 28s ease-in-out infinite,
+            breathe1 18s ease-in-out infinite;
         }
 
-        .peak-2 {
-          animation: breathe2 18s ease-in-out infinite;
+        .wave-2 {
+          animation:
+            drift2 36s ease-in-out infinite,
+            breathe2 24s ease-in-out infinite;
         }
 
-        .peak-3 {
-          animation: breathe3 16s ease-in-out infinite;
+        .wave-3 {
+          animation:
+            drift3 42s ease-in-out infinite,
+            breathe3 30s ease-in-out infinite;
         }
 
-        .peak-4 {
-          animation: breathe4 20s ease-in-out infinite;
+        @keyframes drift1 {
+          0%,100% { transform: translateX(0px); }
+          50% { transform: translateX(-18px); }
+        }
+
+        @keyframes drift2 {
+          0%,100% { transform: translateX(0px); }
+          50% { transform: translateX(14px); }
+        }
+
+        @keyframes drift3 {
+          0%,100% { transform: translateX(0px); }
+          50% { transform: translateX(-10px); }
         }
 
         @keyframes breathe1 {
-          0%,100% { transform: scaleY(1); }
-          50% { transform: scaleY(1.08); }
+          0%,100% { scale: 1 1; }
+          50% { scale: 1 1.08; }
         }
 
         @keyframes breathe2 {
-          0%,100% { transform: scaleY(1); }
-          50% { transform: scaleY(0.92); }
+          0%,100% { scale: 1 1; }
+          50% { scale: 1 0.94; }
         }
 
         @keyframes breathe3 {
-          0%,100% { transform: scaleY(1); }
-          50% { transform: scaleY(1.06); }
-        }
-
-        @keyframes breathe4 {
-          0%,100% { transform: scaleY(1); }
-          50% { transform: scaleY(0.95); }
+          0%,100% { scale: 1 1; }
+          50% { scale: 1 1.05; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .peak {
+          .wave {
             animation: none !important;
           }
         }
       `}</style>
 
       <svg
-        viewBox="0 0 1200 80"
-        className="w-full h-20"
+        viewBox="0 0 1200 180"
         preserveAspectRatio="none"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+        }}
       >
-        {/* baseline */}
-        <line
-          x1="0"
-          y1="50"
-          x2="1200"
-          y2="50"
-          stroke="#1DB954"
-          strokeOpacity="0.15"
-          strokeWidth="1"
-        />
-
-        <g
-          fill="#1DB954"
-          fillOpacity="0.14"
-          style={{ mixBlendMode: "multiply" }}
-        >
+        <g className="wave wave-1">
           <path
-            className="peak peak-1"
+            fill="rgba(29,185,84,0.05)"
             d="
-              M0 50
-              C60 50 90 22 140 22
-              C190 22 220 50 280 50
+              M0 90
+              C120 40 240 140 360 95
+              C500 40 650 150 800 85
+              C950 20 1080 120 1200 70
+              L1200 180
+              L0 180
               Z
             "
           />
+        </g>
 
+        <g className="wave wave-2">
           <path
-            className="peak peak-2"
+            fill="rgba(29,185,84,0.08)"
             d="
-              M220 50
-              C320 50 350 8 430 8
-              C510 8 550 50 650 50
+              M0 115
+              C140 75 260 155 420 110
+              C560 70 700 165 850 105
+              C980 55 1100 135 1200 95
+              L1200 180
+              L0 180
               Z
             "
           />
+        </g>
 
+        <g className="wave wave-3">
           <path
-            className="peak peak-3"
+            fill="rgba(29,185,84,0.12)"
             d="
-              M560 50
-              C620 50 660 26 720 26
-              C780 26 820 50 900 50
-              Z
-            "
-          />
-
-          <path
-            className="peak peak-4"
-            d="
-              M820 50
-              C930 50 980 14 1060 14
-              C1140 14 1170 50 1200 50
+              M0 145
+              C180 95 320 175 500 130
+              C650 90 820 180 980 125
+              C1080 95 1150 140 1200 120
+              L1200 180
+              L0 180
               Z
             "
           />
@@ -116,24 +126,3 @@ export default function FacetSeparator() {
     </div>
   );
 }
-
-// export default function FacetSeparator() {
-//   return (
-//     <div className="max-w-5xl mx-auto px-8 my-12">
-//       <svg
-//         width="100%"
-//         height="44"
-//         viewBox="0 0 600 44"
-//         preserveAspectRatio="none"
-//       >
-//         <g style={{ mixBlendMode: 'multiply' }}>
-//           <polygon points="0,22 70,8 160,22 70,34"      fill="#1DB954" fillOpacity="0.2" />
-//           <polygon points="100,22 200,4 290,22 200,36"  fill="#1DB954" fillOpacity="0.2" />
-//           <polygon points="220,22 320,14 410,22 320,30" fill="#1DB954" fillOpacity="0.2" />
-//           <polygon points="340,22 430,6 510,22 430,32"  fill="#1DB954" fillOpacity="0.2" />
-//           <polygon points="440,22 540,12 600,22 540,28" fill="#1DB954" fillOpacity="0.2" />
-//         </g>
-//       </svg>
-//     </div>
-//   );
-// }
