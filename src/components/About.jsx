@@ -21,8 +21,8 @@ export default function About() {
           About
         </p>
 
-        <h1 className="text-5xl lg:text-[3.25rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-8">
-          Senior Android<br />Software Engineer
+        <h1 className="text-4xl lg:text-[3.00rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-8">
+          Senior Android/Front End<br />Software Engineer
         </h1>
 
         <p className="text-slate-600 text-base leading-relaxed mb-5">
