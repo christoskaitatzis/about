@@ -6,6 +6,7 @@ import Articles from './components/Articles'
 import Ideas from './components/Ideas'
 import Contact from './components/Contact'
 import SpotifySection from './components/SpotifySection'
+import FacetSeparator from './components/FacetSeparator'
 
 
 const SECTIONS = ['about', 'projects', 'articles', 'ideas', 'contact']
@@ -75,9 +76,13 @@ export default function App() {
 
       <main className="lg:ml-64 flex-1 min-h-screen pt-14 lg:pt-0">
         <About />
+        <FacetSeparator />
         <Projects />
+        <FacetSeparator />
         <Articles />
+        <FacetSeparator />
         <Ideas />
+        <FacetSeparator />
         <Contact />
         <SpotifySection />
       </main>
