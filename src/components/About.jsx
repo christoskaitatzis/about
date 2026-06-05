@@ -56,7 +56,7 @@ export default function About() {
           </div>
         </div>
       </div>
-      <FacetSeparator />
+      <FacetSeparator className="-mx-8 lg:-mx-16" />
     </section>
   )
 }
