@@ -8,7 +8,7 @@ const ARTICLES = [
 
 export default function Articles() {
   return (
-    <section id="articles" className="min-h-screen px-8 lg:px-16 pt-16 pb-20 border-t border-gray-100">
+    <section id="articles" className="min-h-screen px-8 lg:px-16 pt-16 pb-20">
       <div className="max-w-4xl">
         <p className="text-[0.65rem] font-semibold text-slate-400 tracking-[0.22em] uppercase mb-8">Articles</p>
         <h2 className="text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-14">
