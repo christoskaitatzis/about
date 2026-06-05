@@ -1,3 +1,5 @@
+import FacetSeparator from './FacetSparator'
+
 const EXPERTISE = [
   'Kotlin',
   'Jetpack Compose',
