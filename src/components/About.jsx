@@ -27,7 +27,7 @@ export default function About() {
         </h1>
 
         <p className="text-slate-600 text-base leading-relaxed mb-5">
-          Architecting memory-efficient, reactive Android systems with a focus on
+          Architecting reactive mobile and web application systems with a focus on
           scalability and modern design principles. I collaborate with cross-functional
           teams to ship innovative digital products — combining technical depth with
           clean, maintainable code.
