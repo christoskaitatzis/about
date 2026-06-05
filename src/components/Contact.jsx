@@ -14,12 +14,6 @@ export default function Contact() {
             <p className="text-[0.65rem] font-semibold text-slate-400 tracking-[0.22em] uppercase mb-2">Location</p>
             <div className="flex items-center gap-3">
               <WorldGlobe />
-          
-              <div>
-                <p className="text-slate-700 text-sm leading-tight">
-                  Somewhere around the world (taking off from Thessaloniki)
-                </p>
-              </div>
             </div>
           </div>
           <div>
