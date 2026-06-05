@@ -76,7 +76,7 @@ export default function App() {
 
       <main className="lg:ml-64 flex-1 min-h-screen pt-14 lg:pt-0">
         <About />
-        <FacetSeparator />
+        {/* <FacetSeparator /> */}
         <Projects />
         <FacetSeparator />
         <Articles />
