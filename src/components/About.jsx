@@ -54,6 +54,7 @@ export default function About() {
           </div>
         </div>
       </div>
+      <FacetSeparator />
     </section>
   )
 }
