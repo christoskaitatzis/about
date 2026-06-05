@@ -34,7 +34,7 @@ export default function App() {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-slate-200" />
-          <span className="text-slate-900 font-semibold text-sm">Christos</span>
+          <span className="text-slate-900 font-semibold text-sm">Christos Kaitatzis</span>
         </div>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -78,6 +78,7 @@ export default function App() {
         <Ideas />
         <Contact />
       </main>
+      <SpotifyWidget /> 
     </div>
   )
 }
