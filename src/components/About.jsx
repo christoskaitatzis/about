@@ -1,4 +1,4 @@
-import FacetSeparator from './FacetSparator'
+import FacetSeparator from './FacetSeparator'
 
 const EXPERTISE = [
   'Kotlin',
