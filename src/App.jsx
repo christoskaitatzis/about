@@ -5,7 +5,7 @@ import Projects from './components/Projects'
 import Articles from './components/Articles'
 import Ideas from './components/Ideas'
 import Contact from './components/Contact'
-import SpotifyWidget from './components/SpotifyWidget'
+import SpotifySection from './components/SpotifySection'
 
 
 const SECTIONS = ['about', 'projects', 'articles', 'ideas', 'contact']
@@ -79,8 +79,8 @@ export default function App() {
         <Articles />
         <Ideas />
         <Contact />
+        <SpotifySection />
       </main>
-      <SpotifyWidget /> 
     </div>
   )
 }
