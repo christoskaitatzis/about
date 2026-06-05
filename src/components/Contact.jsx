@@ -1,3 +1,5 @@
+import WorldGlobe from "./WorldGlobe";
+
 export default function Contact() {
   return (
     <section id="contact" className="min-h-screen px-8 lg:px-16 pt-16 pb-20 border-t border-gray-100">
