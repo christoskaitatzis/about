@@ -1,6 +1,6 @@
-export default function FacetSeparator() {
+export default function FacetSeparator({ className = '' }) {
   return (
-    <div
+    <div className={`mt-12 ${className}`}>
       style={{
         position: "relative",
         height: 180,
