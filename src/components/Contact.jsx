@@ -1,3 +1,4 @@
+import LocationSection from "./LocationSection";
 import WorldGlobe from "./WorldGlobe";
 
 export default function Contact() {
@@ -13,7 +14,8 @@ export default function Contact() {
           <div>
             <p className="text-[0.65rem] font-semibold text-slate-400 tracking-[0.22em] uppercase mb-2">Location</p>
             <div className="flex items-center gap-3">
-              <WorldGlobe />
+              {/* <WorldGlobe /> */}
+              <LocationSection />
             </div>
           </div>
           <div>
