@@ -1,6 +1,7 @@
 export default function FacetSeparator({ className = '' }) {
   return (
-    <div className={`mt-12 ${className}`}>
+    <div
+      className={`mt-12 ${className}`}
       style={{
         position: "relative",
         height: 180,
