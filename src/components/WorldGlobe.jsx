@@ -53,7 +53,7 @@ export default function WorldGlobe() {
             marginTop: 4,
           }}
         >
-          quietly building things
+          taking off from Thessaloniki, Greece
         </div>
       </div>
 
