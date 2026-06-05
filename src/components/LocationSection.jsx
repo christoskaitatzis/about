@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  *   subtitle {string}  – grey subtext     (default: "taking off from Thessaloniki, Greece")
  *   lat      {number}  – marker latitude  (default: 40.6401 – Thessaloniki)
  *   lng      {number}  – marker longitude (default: 22.9444)
- *   size     {number}  – globe diameter in px (default: 72)
+ *   size     {number}  – globe diameter in px (default: 160)
  *
  * Install dep:  npm install cobe
  */
@@ -19,7 +19,7 @@ export default function LocationSection({
   subtitle = "taking off from Thessaloniki, Greece",
   lat      = 40.6401,
   lng      = 22.9444,
-  size     = 72,
+  size     = 160,
 }) {
   const canvasRef = useRef(null);
   const phiRef    = useRef(0);
@@ -40,13 +40,13 @@ export default function LocationSection({
         phi: 0,
         theta: 0.3,
         dark: 1,
-        diffuse: 1.4,
-        mapSamples: 8000,
-        mapBrightness: 5,
+        diffuse: 3.5,
+        mapSamples: 16000,
+        mapBrightness: 12,
         baseColor:   [0.10, 0.28, 0.16],
         markerColor: [0.30, 0.85, 0.50],
         glowColor:   [0.15, 0.45, 0.25],
-        markers: [{ location: [lat, lng], size: 0.06 }],
+        markers: [{ location: [lat, lng], size: 0.05 }],
         onRender(state) {
           phiRef.current += 0.004;
           state.phi    = phiRef.current;
@@ -64,13 +64,11 @@ export default function LocationSection({
 
   return (
     <div style={styles.row}>
-      {/* Text */}
       <div style={styles.textCol}>
         <span style={styles.title}>{title}</span>
         <span style={styles.subtitle}>{subtitle}</span>
       </div>
 
-      {/* Globe */}
       <canvas
         ref={canvasRef}
         width={size * 2}
