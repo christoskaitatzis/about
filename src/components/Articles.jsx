@@ -17,7 +17,7 @@ export default function Articles() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ARTICLES.map((article) => (
-            
+            <a 
               key={article.url}
               href={article.url}
               target="_blank"
