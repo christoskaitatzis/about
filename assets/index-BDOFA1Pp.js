@@ -42,4 +42,71 @@ Error generating stack: `+i.message+`
           0%, 100% { transform: translateX(0); }
           50% { transform: translateX(4px); }
         }
-      `}),m.jsxs("svg",{ref:t,style:{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0},preserveAspectRatio:"none",children:[m.jsx("path",{id:"s1",fill:"rgba(29,185,84,0.08)"}),m.jsx("path",{id:"s2",fill:"rgba(29,185,84,0.13)"})]}),m.jsxs("div",{style:{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:20},children:[m.jsxs("div",{style:{textAlign:"right",maxWidth:170},children:[m.jsxs("div",{style:{fontFamily:"Georgia, 'Times New Roman', serif",fontStyle:"italic",fontSize:14,color:"#1DB954",lineHeight:1.35},children:["Check out my track",m.jsx("span",{style:{display:"inline-block",marginLeft:4,animation:"nudge 1.8s ease-in-out infinite"},children:"→"})]}),m.jsx("div",{style:{fontSize:11,color:"#888",marginTop:6,lineHeight:1.4},children:"and add it to your playlist"})]}),m.jsx("div",{style:{width:320,flexShrink:0},children:m.jsx("iframe",{"data-testid":"embed-iframe",style:{borderRadius:12,display:"block"},src:`https://open.spotify.com/embed/track/${Gd}?utm_source=generator&theme=0`,width:"100%",height:"152",frameBorder:"0",allowFullScreen:!0,allow:"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture",loading:"lazy",title:"Spotify track"})})]})]})}function yr(){return m.jsx("div",{className:"max-w-5xl mx-auto px-8 my-12",children:m.jsx("svg",{width:"100%",height:"44",viewBox:"0 0 600 44",preserveAspectRatio:"none",children:m.jsxs("g",{style:{mixBlendMode:"multiply"},children:[m.jsx("polygon",{points:"0,22 70,8 160,22 70,34",fill:"#1DB954",fillOpacity:"0.2"}),m.jsx("polygon",{points:"100,22 200,4 290,22 200,36",fill:"#1DB954",fillOpacity:"0.2"}),m.jsx("polygon",{points:"220,22 320,14 410,22 320,30",fill:"#1DB954",fillOpacity:"0.2"}),m.jsx("polygon",{points:"340,22 430,6 510,22 430,32",fill:"#1DB954",fillOpacity:"0.2"}),m.jsx("polygon",{points:"440,22 540,12 600,22 540,28",fill:"#1DB954",fillOpacity:"0.2"})]})})})}const Qu=["about","projects","articles","ideas","contact"];function Zd(){const[e,t]=We.useState("about"),[n,r]=We.useState(!1);return We.useEffect(()=>{const l=()=>{const i=[...Qu].reverse();for(const o of i){const u=document.getElementById(o);if(u&&u.getBoundingClientRect().top<=140){t(o);break}}};return window.addEventListener("scroll",l,{passive:!0}),()=>window.removeEventListener("scroll",l)},[]),m.jsxs("div",{className:"flex bg-white font-sans",children:[m.jsxs("header",{className:"lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between",children:[m.jsxs("div",{className:"flex items-center gap-3",children:[m.jsx("div",{className:"w-8 h-8 rounded-full bg-slate-200"}),m.jsx("span",{className:"text-slate-900 font-semibold text-sm",children:"Christos Kaitatzis"})]}),m.jsx("button",{onClick:()=>r(!n),className:"text-slate-500 hover:text-slate-800 transition-colors","aria-label":"Toggle menu",children:m.jsx("svg",{className:"w-5 h-5",fill:"none",stroke:"currentColor",viewBox:"0 0 24 24",children:n?m.jsx("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M6 18L18 6M6 6l12 12"}):m.jsx("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M4 6h16M4 12h16M4 18h16"})})})]}),n&&m.jsx("div",{className:"lg:hidden fixed inset-0 z-10 bg-white pt-16 px-8",children:m.jsx("nav",{className:"flex flex-col gap-6 mt-6",children:Qu.map(l=>m.jsx("button",{onClick:()=>{var i;(i=document.getElementById(l))==null||i.scrollIntoView({behavior:"smooth"}),r(!1)},className:"text-left text-base capitalize text-slate-500 hover:text-slate-900 transition-colors",children:l},l))})}),m.jsx(Od,{active:e}),m.jsxs("main",{className:"lg:ml-64 flex-1 min-h-screen pt-14 lg:pt-0",children:[m.jsx(Fd,{}),m.jsx(yr,{}),m.jsx(Vd,{}),m.jsx(yr,{}),m.jsx(Hd,{}),m.jsx(yr,{}),m.jsx(Kd,{}),m.jsx(yr,{}),m.jsx(Yd,{}),m.jsx(Xd,{})]})]})}Yl.createRoot(document.getElementById("root")).render(m.jsx(kc.StrictMode,{children:m.jsx(Zd,{})}));
+      `}),m.jsxs("svg",{ref:t,style:{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0},preserveAspectRatio:"none",children:[m.jsx("path",{id:"s1",fill:"rgba(29,185,84,0.08)"}),m.jsx("path",{id:"s2",fill:"rgba(29,185,84,0.13)"})]}),m.jsxs("div",{style:{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:20},children:[m.jsxs("div",{style:{textAlign:"right",maxWidth:170},children:[m.jsxs("div",{style:{fontFamily:"Georgia, 'Times New Roman', serif",fontStyle:"italic",fontSize:14,color:"#1DB954",lineHeight:1.35},children:["Check out my track",m.jsx("span",{style:{display:"inline-block",marginLeft:4,animation:"nudge 1.8s ease-in-out infinite"},children:"→"})]}),m.jsx("div",{style:{fontSize:11,color:"#888",marginTop:6,lineHeight:1.4},children:"and add it to your playlist"})]}),m.jsx("div",{style:{width:320,flexShrink:0},children:m.jsx("iframe",{"data-testid":"embed-iframe",style:{borderRadius:12,display:"block"},src:`https://open.spotify.com/embed/track/${Gd}?utm_source=generator&theme=0`,width:"100%",height:"152",frameBorder:"0",allowFullScreen:!0,allow:"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture",loading:"lazy",title:"Spotify track"})})]})]})}function yr(){return m.jsxs("div",{className:"w-full py-12 overflow-hidden",children:[m.jsx("style",{children:`
+        .peak {
+          transform-box: fill-box;
+          transform-origin: center bottom;
+        }
+
+        .peak-1 {
+          animation: breathe1 14s ease-in-out infinite;
+        }
+
+        .peak-2 {
+          animation: breathe2 18s ease-in-out infinite;
+        }
+
+        .peak-3 {
+          animation: breathe3 16s ease-in-out infinite;
+        }
+
+        .peak-4 {
+          animation: breathe4 20s ease-in-out infinite;
+        }
+
+        @keyframes breathe1 {
+          0%,100% { transform: scaleY(1); }
+          50% { transform: scaleY(1.08); }
+        }
+
+        @keyframes breathe2 {
+          0%,100% { transform: scaleY(1); }
+          50% { transform: scaleY(0.92); }
+        }
+
+        @keyframes breathe3 {
+          0%,100% { transform: scaleY(1); }
+          50% { transform: scaleY(1.06); }
+        }
+
+        @keyframes breathe4 {
+          0%,100% { transform: scaleY(1); }
+          50% { transform: scaleY(0.95); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .peak {
+            animation: none !important;
+          }
+        }
+      `}),m.jsxs("svg",{viewBox:"0 0 1200 80",className:"w-full h-20",preserveAspectRatio:"none",children:[m.jsx("line",{x1:"0",y1:"50",x2:"1200",y2:"50",stroke:"#1DB954",strokeOpacity:"0.15",strokeWidth:"1"}),m.jsxs("g",{fill:"#1DB954",fillOpacity:"0.14",style:{mixBlendMode:"multiply"},children:[m.jsx("path",{className:"peak peak-1",d:`
+              M0 50
+              C60 50 90 22 140 22
+              C190 22 220 50 280 50
+              Z
+            `}),m.jsx("path",{className:"peak peak-2",d:`
+              M220 50
+              C320 50 350 8 430 8
+              C510 8 550 50 650 50
+              Z
+            `}),m.jsx("path",{className:"peak peak-3",d:`
+              M560 50
+              C620 50 660 26 720 26
+              C780 26 820 50 900 50
+              Z
+            `}),m.jsx("path",{className:"peak peak-4",d:`
+              M820 50
+              C930 50 980 14 1060 14
+              C1140 14 1170 50 1200 50
+              Z
+            `})]})]})]})}const Qu=["about","projects","articles","ideas","contact"];function Zd(){const[e,t]=We.useState("about"),[n,r]=We.useState(!1);return We.useEffect(()=>{const l=()=>{const i=[...Qu].reverse();for(const o of i){const u=document.getElementById(o);if(u&&u.getBoundingClientRect().top<=140){t(o);break}}};return window.addEventListener("scroll",l,{passive:!0}),()=>window.removeEventListener("scroll",l)},[]),m.jsxs("div",{className:"flex bg-white font-sans",children:[m.jsxs("header",{className:"lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between",children:[m.jsxs("div",{className:"flex items-center gap-3",children:[m.jsx("div",{className:"w-8 h-8 rounded-full bg-slate-200"}),m.jsx("span",{className:"text-slate-900 font-semibold text-sm",children:"Christos Kaitatzis"})]}),m.jsx("button",{onClick:()=>r(!n),className:"text-slate-500 hover:text-slate-800 transition-colors","aria-label":"Toggle menu",children:m.jsx("svg",{className:"w-5 h-5",fill:"none",stroke:"currentColor",viewBox:"0 0 24 24",children:n?m.jsx("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M6 18L18 6M6 6l12 12"}):m.jsx("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M4 6h16M4 12h16M4 18h16"})})})]}),n&&m.jsx("div",{className:"lg:hidden fixed inset-0 z-10 bg-white pt-16 px-8",children:m.jsx("nav",{className:"flex flex-col gap-6 mt-6",children:Qu.map(l=>m.jsx("button",{onClick:()=>{var i;(i=document.getElementById(l))==null||i.scrollIntoView({behavior:"smooth"}),r(!1)},className:"text-left text-base capitalize text-slate-500 hover:text-slate-900 transition-colors",children:l},l))})}),m.jsx(Od,{active:e}),m.jsxs("main",{className:"lg:ml-64 flex-1 min-h-screen pt-14 lg:pt-0",children:[m.jsx(Fd,{}),m.jsx(yr,{}),m.jsx(Vd,{}),m.jsx(yr,{}),m.jsx(Hd,{}),m.jsx(yr,{}),m.jsx(Kd,{}),m.jsx(yr,{}),m.jsx(Yd,{}),m.jsx(Xd,{})]})]})}Yl.createRoot(document.getElementById("root")).render(m.jsx(kc.StrictMode,{children:m.jsx(Zd,{})}));
