@@ -15,9 +15,9 @@ export default function Sidebar({ active }) {
     <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-64 border-r border-gray-100 bg-white flex-col px-8 py-10 z-10">
       {/* Profile */}
       <div className="flex items-center gap-3 mb-12">
-        <div className="w-12 h-12 rounded-full bg-slate-200 flex-shrink-0" />
+        {/* <div className="w-12 h-12 rounded-full bg-slate-200 flex-shrink-0" /> */}
         <div>
-          <div className="text-slate-900 font-semibold text-sm leading-tight">Christos</div>
+          <div className="text-slate-900 font-semibold text-sm leading-tight">Christos\nKaitatzis</div>
         </div>
       </div>
 
