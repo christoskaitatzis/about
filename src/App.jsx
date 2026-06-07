@@ -7,6 +7,7 @@ import Ideas from './components/Ideas'
 import Contact from './components/Contact'
 import SpotifySection from './components/SpotifySection'
 import FacetSeparator from './components/FacetSeparator'
+import SourcesAndHWInfo from './components/SourcesAndHWInfo'
 
 
 const SECTIONS = ['about', 'projects', 'articles', 'ideas', 'contact']
@@ -82,6 +83,8 @@ export default function App() {
         <Articles />
         <FacetSeparator />
         <Ideas />
+        <FacetSeparator />
+        <SourcesAndHWInfo />
         <FacetSeparator />
         <Contact />
         <SpotifySection />
