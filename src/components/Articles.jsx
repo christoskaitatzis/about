@@ -3,6 +3,7 @@ const ARTICLES = [
   { title: 'Introducing CommentBase.io', url: 'https://medium.com/@xrkaitatzis/introducing-commentbase-io-46a03b7377b6', tag: 'Product' },
   { title: 'Koin vs Hilt, pros and cons', url: 'https://medium.com/@xrkaitatzis/koin-vs-hilt-pros-and-cons-6db677f32b21', tag: 'Android' },
   { title: 'Applying micro-interactions for responsive user interfaces with Kotlin and Jetpack Compose', url: 'https://medium.com/@xrkaitatzis/applying-micro-interactions-for-responsive-user-interfaces-with-kotlin-and-jetpack-compose-3455d0cac51f', tag: 'Compose' },
+  { title: 'Start Testing on Real Android Devices with Firebase Test Lab', url: 'https://medium.com/@xrkaitatzis/start-testing-on-real-android-devices-with-firebase-test-lab-0f319820291f', tag: 'Firebase' },
   { title: 'A guide for animating icons with Compose', url: 'https://medium.com/@xrkaitatzis/compose-animations-a-step-by-step-guide-to-dynamic-interfaces-55eda8a26354', tag: 'Compose' },
 ]
 
