@@ -37,7 +37,7 @@ export default function SourcesAndHWInfo() {
     <section id="tech-sources" className="flex-1 px-8 lg:px-16 pt-16 pb-20">
       <div className="max-w-2xl">
         <p className="text-[0.65rem] font-semibold text-slate-400 tracking-[0.22em] uppercase mb-8">
-          Tech Sources
+          Tech Sources and Hardware Insights
         </p>
         <h2 className="text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-14">
           Sources I follow
@@ -66,6 +66,10 @@ export default function SourcesAndHWInfo() {
             ))}
           </div>
         </div>
+
+        <h2 className="text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-14">
+          Interactive Device 360°
+        </h2>
 
         {/* Expandable Phone Explorer card */}
         <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden hover:border-slate-300 transition-colors">
