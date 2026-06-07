@@ -12,7 +12,7 @@ export default function Articles() {
       <div className="max-w-4xl">
         <p className="text-[0.65rem] font-semibold text-slate-400 tracking-[0.22em] uppercase mb-8">Articles</p>
         <h2 className="text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-14">
-          Writing on Android<br />development
+          Writing on modern<br />tech subjects and engineering
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
