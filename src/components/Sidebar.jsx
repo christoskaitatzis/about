@@ -17,7 +17,7 @@ export default function Sidebar({ active }) {
       <div className="flex items-center gap-3 mb-12">
         {/* <div className="w-12 h-12 rounded-full bg-slate-200 flex-shrink-0" /> */}
         <div>
-          <div className="text-slate-900 font-semibold text-sm leading-tight">Christos\nKaitatzis</div>
+          <div className="text-slate-900 font-semibold text-sm leading-tight">Christos<br />Kaitatzis</div>
         </div>
       </div>
 
