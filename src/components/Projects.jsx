@@ -3,7 +3,7 @@ const PROFESSIONAL = [
   { name: 'Traeger', desc: 'Companion application for smart grills produced by Traeger.' },
   { name: 'Vodafone Greece/UK', desc: 'Developed new features and maintained My Vodafone and My CU applications with more than 2 million downloads combined, also involvement in web application development.' },
   { name: 'EUDI Wallet', desc: 'Involvement in the European Digital Identity Wallet ecosystem.' },
-  { name: 'Allwyn Play', desc: 'Play store companion app.' },
+  { name: 'Allwyn Play', desc: 'Allwyn/Opap Play stores companion app.' },
   { name: 'My Planner', desc: 'An internal desk-booking tool.' },
 ]
 
