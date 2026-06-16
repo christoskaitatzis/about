@@ -48,76 +48,29 @@ export default function Sidebar({ active }) {
         aria-label="Play the game"
         title="Play"
       >
-        <svg
-          viewBox="0 0 80 36"
-          className="w-14 h-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-110"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <linearGradient id="a3body" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#fbfcfd" />
-              <stop offset="40%" stopColor="#d3d8dd" />
-              <stop offset="100%" stopColor="#9099a1" />
-            </linearGradient>
-
-            <linearGradient id="a3glass" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#e6eef5" />
-              <stop offset="100%" stopColor="#7e95a8" />
-            </linearGradient>
-
-            <radialGradient id="a3rim" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#f4f6f8" />
-              <stop offset="100%" stopColor="#aeb6bd" />
-            </radialGradient>
-          </defs>
-
-          {/* Body */}
-          <path
-            d="M8,27 L8,22 C8,21 9,20 11,19 L20,16 C22,12 26,10 32,10 L50,10
-               C56,10 60,13 64,17 L70,21 C72,22 72,24 72,27 L64,27
-               A6,6 0 0 0 52,27 L28,27 A6,6 0 0 0 16,27 L8,27 Z"
-            fill="url(#a3body)"
-            stroke="#7b848c"
-            strokeWidth="0.8"
-            strokeLinejoin="round"
-          />
-
-          {/* Glass */}
-          <path
-            d="M24,16 L31,11.5 L49,11.5 C53.5,11.5 57,13.3 59.5,16 Z"
-            fill="url(#a3glass)"
-          />
-
-          {/* Pillar */}
-          <line x1="40" y1="11.5" x2="40" y2="16" stroke="#aab2b9" strokeWidth="0.8" />
-
-          {/* Highlight */}
-          <path
-            d="M11,19 L20,16.4 L31,16.4 L24,16.4"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="0.9"
-            strokeLinecap="round"
-            opacity="0.7"
-          />
-
-          {/* Headlight */}
-          <path
-            d="M8,20 L11.5,19 L11.5,21 L8,21.5 Z"
-            fill="#fff7d6"
-            stroke="#c9ad55"
-            strokeWidth="0.4"
-          />
-
-          {/* Wheels */}
-          {[22, 58].map((cx) => (
-            <g key={cx}>
-              <circle cx={cx} cy="27" r="6" fill="#2a2e33" />
-              <circle cx={cx} cy="27" r="3.2" fill="url(#a3rim)" stroke="#838b92" strokeWidth="0.4" />
-              <circle cx={cx} cy="27" r="0.9" fill="#6b7378" />
-            </g>
-          ))}
-        </svg>
+       <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Body Outline -->
+  <path d="M185 115C185 105 180 90 170 85C160 80 145 75 130 75C115 75 90 75 75 78C60 81 45 88 35 95C25 102 20 110 20 120V135C20 138 22 140 25 140H180C183 140 185 138 185 135V115Z" stroke="black" stroke-width="2" fill="#E0E0E0"/>
+  
+  <!-- Windows -->
+  <path d="M65 82C65 82 85 78 125 78C135 78 155 80 165 85L168 110H65V82Z" stroke="black" stroke-width="1.5" fill="white"/>
+  <line x1="125" y1="78" x2="125" y2="110" stroke="black" stroke-width="1.5"/>
+  
+  <!-- Front Grille (Minimal) -->
+  <rect x="25" y="110" width="30" height="25" rx="4" stroke="black" stroke-width="1.5" fill="#D0D0D0"/>
+  
+  <!-- Headlight -->
+  <path d="M25 105C30 102 45 102 55 105L52 112H28L25 105Z" stroke="black" stroke-width="1" fill="white"/>
+  
+  <!-- Wheels -->
+  <circle cx="55" cy="140" r="15" fill="white" stroke="black" stroke-width="2"/>
+  <circle cx="55" cy="140" r="10" stroke="black" stroke-width="1" stroke-dasharray="2 2"/>
+  <circle cx="155" cy="140" r="15" fill="white" stroke="black" stroke-width="2"/>
+  <circle cx="155" cy="140" r="10" stroke="black" stroke-width="1" stroke-dasharray="2 2"/>
+  
+  <!-- Side Line Detail -->
+  <path d="M60 125H175" stroke="black" stroke-width="1" opacity="0.5"/>
+</svg>
 
         <span className="text-[11px] font-medium tracking-wide">
           Play
