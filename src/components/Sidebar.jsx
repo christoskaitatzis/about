@@ -10,12 +10,14 @@ export default function Sidebar({ active }) {
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
   }
+
   return (
     <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-64 border-r border-gray-100 bg-white flex-col px-8 py-10 z-10">
+      
       {/* Profile */}
       <div className="flex items-center gap-3 mb-12">
-        <div>
-          <div className="text-slate-900 font-semibold text-sm leading-tight">Christos<br />Kaitatzis</div>
+        <div className="text-slate-900 font-semibold text-sm leading-tight">
+          Christos<br />Kaitatzis
         </div>
       </div>
 
@@ -36,14 +38,17 @@ export default function Sidebar({ active }) {
         ))}
       </nav>
 
-      {/* Game launcher — change href if your file is named differently */}
-      <a 
+      {/* Spacer pushes bottom content down */}
+      <div className="flex-1" />
+
+      {/* Game launcher */}
+      <a
         href="/portfolio_park.html"
-        className="mt-auto group flex flex-col items-start self-start gap-1.5 text-slate-400 hover:text-slate-700 transition-colors"
+        className="group flex flex-col items-start gap-1.5 text-slate-400 hover:text-slate-700 transition-colors"
         aria-label="Play the game"
         title="Play"
       >
-      <svg
+        <svg
           viewBox="0 0 80 36"
           className="w-14 h-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-110"
           xmlns="http://www.w3.org/2000/svg"
@@ -54,10 +59,12 @@ export default function Sidebar({ active }) {
               <stop offset="40%" stopColor="#d3d8dd" />
               <stop offset="100%" stopColor="#9099a1" />
             </linearGradient>
+
             <linearGradient id="a3glass" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#e6eef5" />
               <stop offset="100%" stopColor="#7e95a8" />
             </linearGradient>
+
             <radialGradient id="a3rim" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#f4f6f8" />
               <stop offset="100%" stopColor="#aeb6bd" />
@@ -74,17 +81,33 @@ export default function Sidebar({ active }) {
             strokeWidth="0.8"
             strokeLinejoin="round"
           />
+
           {/* Glass */}
           <path
             d="M24,16 L31,11.5 L49,11.5 C53.5,11.5 57,13.3 59.5,16 Z"
             fill="url(#a3glass)"
           />
+
           {/* Pillar */}
           <line x1="40" y1="11.5" x2="40" y2="16" stroke="#aab2b9" strokeWidth="0.8" />
-          {/* Sheen highlight */}
-          <path d="M11,19 L20,16.4 L31,16.4 L24,16.4" fill="none" stroke="#ffffff" strokeWidth="0.9" strokeLinecap="round" opacity="0.7" />
+
+          {/* Highlight */}
+          <path
+            d="M11,19 L20,16.4 L31,16.4 L24,16.4"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="0.9"
+            strokeLinecap="round"
+            opacity="0.7"
+          />
+
           {/* Headlight */}
-          <path d="M8,20 L11.5,19 L11.5,21 L8,21.5 Z" fill="#fff7d6" stroke="#c9ad55" strokeWidth="0.4" />
+          <path
+            d="M8,20 L11.5,19 L11.5,21 L8,21.5 Z"
+            fill="#fff7d6"
+            stroke="#c9ad55"
+            strokeWidth="0.4"
+          />
 
           {/* Wheels */}
           {[22, 58].map((cx) => (
@@ -95,8 +118,10 @@ export default function Sidebar({ active }) {
             </g>
           ))}
         </svg>
-   
-        <span className="text-[11px] font-medium tracking-wide">Play</span>
+
+        <span className="text-[11px] font-medium tracking-wide">
+          Play
+        </span>
       </a>
     </aside>
   )
