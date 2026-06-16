@@ -54,28 +54,28 @@ export default function Sidebar({ active }) {
   <path d="M185 115C185 105 180 90 170 85C160 80 145 75 130 75C115 75 90 75 75 78C60 81 45 88 35 95C25 102 20 110 20 120V135C20 138 22 140 25 140H180C183 140 185 138 185 135V115Z" stroke="black" stroke-width="2" fill="#E0E0E0"/>
   
   {/* <!-- Windows --> */}
-  <path d="M65 82C65 82 85 78 125 78C135 78 155 80 165 85L168 110H65V82Z" stroke="black" stroke-width="1.5" fill="white"/>
-  <line x1="125" y1="78" x2="125" y2="110" stroke="black" stroke-width="1.5"/>
+  {/* <path d="M65 82C65 82 85 78 125 78C135 78 155 80 165 85L168 110H65V82Z" stroke="black" stroke-width="1.5" fill="white"/>
+  <line x1="125" y1="78" x2="125" y2="110" stroke="black" stroke-width="1.5"/> */}
   
   {/* <!-- Front Grille (Minimal) --> */}
-  <rect x="25" y="110" width="30" height="25" rx="4" stroke="black" stroke-width="1.5" fill="#D0D0D0"/>
+  {/* <rect x="25" y="110" width="30" height="25" rx="4" stroke="black" stroke-width="1.5" fill="#D0D0D0"/> */}
   
   {/* <!-- Headlight --> */}
-  <path d="M25 105C30 102 45 102 55 105L52 112H28L25 105Z" stroke="black" stroke-width="1" fill="white"/>
+  {/* <path d="M25 105C30 102 45 102 55 105L52 112H28L25 105Z" stroke="black" stroke-width="1" fill="white"/> */}
   
   {/* <!-- Wheels --> */}
-  <circle cx="55" cy="140" r="15" fill="white" stroke="black" stroke-width="2"/>
+  {/* <circle cx="55" cy="140" r="15" fill="white" stroke="black" stroke-width="2"/>
   <circle cx="55" cy="140" r="10" stroke="black" stroke-width="1" stroke-dasharray="2 2"/>
   <circle cx="155" cy="140" r="15" fill="white" stroke="black" stroke-width="2"/>
-  <circle cx="155" cy="140" r="10" stroke="black" stroke-width="1" stroke-dasharray="2 2"/>
+  <circle cx="155" cy="140" r="10" stroke="black" stroke-width="1" stroke-dasharray="2 2"/> */}
   
   {/* <!-- Side Line Detail --> */}
-  <path d="M60 125H175" stroke="black" stroke-width="1" opacity="0.5"/>
-</svg> */}
+  {/* <path d="M60 125H175" stroke="black" stroke-width="1" opacity="0.5"/>
+</svg> */} */}
 
-        <span className="text-[11px] font-medium tracking-wide">
+        {/* <span className="text-[11px] font-medium tracking-wide">
           Play
-        </span>
+        </span> */}
       </a>
     </aside>
   )
