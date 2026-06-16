@@ -37,7 +37,7 @@ export default function Sidebar({ active }) {
       </nav>
 
       {/* Game launcher — change href if your file is named differently */}
-      
+      <a 
         href="/portfolio_park.html"
         className="mt-auto group flex flex-col items-center gap-1.5 text-slate-400 hover:text-slate-700 transition-colors"
         aria-label="Play the game"
