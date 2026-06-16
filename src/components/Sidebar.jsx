@@ -43,7 +43,7 @@ export default function Sidebar({ active }) {
         aria-label="Play the game"
         title="Play"
       >
-        {/* <svg
+      <svg
           viewBox="0 0 80 36"
           className="w-14 h-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-110"
           xmlns="http://www.w3.org/2000/svg"
@@ -94,96 +94,8 @@ export default function Sidebar({ active }) {
               <circle cx={cx} cy="27" r="0.9" fill="#6b7378" />
             </g>
           ))}
-        </svg> */}
-            <svg viewBox="0 0 80 36" class="w-14 h-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-110" xmlns="http://w3.org">
-        <defs>
-          <!-- Premium Metallic Body Gradient -->
-          <linearGradient id="a3body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fdfefe" />
-            <stop offset="35%" stopColor="#dbe0e5" />
-            <stop offset="70%" stopColor="#adb6be" />
-            <stop offset="100%" stopColor="#7a848d" />
-          </linearGradient>
-          <!-- Dark Tinted Audi Glass -->
-          <linearGradient id="a3glass" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3a444d" />
-            <stop offset="100%" stopColor="#1a2024" />
-          </linearGradient>
-          <!-- Sharp Alloy Rim Gradient -->
-          <radialGradient id="a3rim" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="60%" stopColor="#d1d7dc" />
-            <stop offset="100%" stopColor="#78818a" />
-          </radialGradient>
-        </defs>
-      
-        <!-- Main Silhouette (Audi Sportback Roof & Sharp Nose) -->
-        <path d="M 5,26 
-                 L 5,23 
-                 Q 5,20 8,19 
-                 L 18,16 
-                 Q 22,12 26,11 
-                 L 54,11 
-                 Q 59,11 63,13 
-                 L 69,16
-                 L 73,17 
-                 Q 75,18 75,21
-                 L 74,26
-                 A 5.5,5.5 0 0 0 63,26 
-                 L 27,26 
-                 A 5.5,5.5 0 0 0 16,26 
-                 Z" 
-              fill="url(#a3body)" stroke="#66707a" stroke-width="0.7" stroke-linejoin="round" />
-      
-        <!-- Distinct Audi Side Window Graphic (Continuous greenhouse with a sharp kink) -->
-        <path d="M 20,16 
-                 L 26,12.2 
-                 L 53,12.2 
-                 L 61,14.5
-                 L 66,16.2
-                 Q 62,16.2 55,16.2
-                 Z" 
-              fill="url(#a3glass)" />
-      
-        <!-- B-Pillar & C-Pillar Dividers -->
-        <line x1="39" y1="12.2" x2="39" y2="16.2" stroke="#121619" stroke-width="1.0" />
-        <line x1="53" y1="12.2" x2="55" y2="16.2" stroke="#121619" stroke-width="0.8" />
-      
-        <!-- Audi Tornado Line (Sharp crease from headlight to taillight) -->
-        <path d="M 8,19 L 74,19" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.8" />
-        <!-- Bottom Dynamic Crease (S-line rocker panel) -->
-        <path d="M 16,23.5 L 63,23.5" fill="none" stroke="#525b63" stroke-width="0.4" />
-      
-        <!-- Audi Singleframe Grille Profile Hint (Aggressive front angle) -->
-        <path d="M 5,21.5 L 6.5,25" fill="none" stroke="#3a444d" stroke-width="0.8" />
-      
-        <!-- Sharp Audi Matrix-LED Headlight -->
-        <path d="M 5,20.2 L 10,19.2 L 9.5,21 L 5.5,21.5 Z" fill="#ffffff" stroke="#00bfff" stroke-width="0.3" opacity="0.9" />
-        <path d="M 6,20.6 L 8.5,20.1" fill="none" stroke="#00bfff" stroke-width="0.5" />
-      
-        <!-- Angular Audi Tail Light -->
-        <path d="M 74.8,20 L 71,20 L 72,21.8 L 74.5,21.5 Z" fill="#ff2e2e" />
-      
-        <!-- Wheels & Detailed S-Line Rims -->
-        <!-- Front Wheel (cx=21.5), Rear Wheel (cx=57.5) -->
-        <g>
-          <!-- Front Wheel -->
-          <circle cx="21.5" cy="26" r="5.5" fill="#191c1f" />
-          <circle cx="21.5" cy="26" r="3.4" fill="url(#a3rim)" stroke="#525b63" stroke-width="0.3" />
-          <circle cx="21.5" cy="26" r="0.8" fill="#3a444d" />
-          <!-- Spokes structural preview -->
-          <line x1="19" y1="26" x2="24" y2="26" stroke="#ffffff" stroke-width="0.3" opacity="0.6" />
-          <line x1="21.5" y1="23.5" x2="21.5" y2="28.5" stroke="#ffffff" stroke-width="0.3" opacity="0.6" />
-          
-          <!-- Rear Wheel -->
-          <circle cx="57.5" cy="26" r="5.5" fill="#191c1f" />
-          <circle cx="57.5" cy="26" r="3.4" fill="url(#a3rim)" stroke="#525b63" stroke-width="0.3" />
-          <circle cx="57.5" cy="26" r="0.8" fill="#3a444d" />
-          <!-- Spokes structural preview -->
-          <line x1="55" y1="26" x2="60" y2="26" stroke="#ffffff" stroke-width="0.3" opacity="0.6" />
-          <line x1="57.5" cy="23.5" x2="57.5" y2="28.5" stroke="#ffffff" stroke-width="0.3" opacity="0.6" />
-        </g>
-      </svg>
+        </svg>
+   
         <span className="text-[11px] font-medium tracking-wide">Play</span>
       </a>
     </aside>
