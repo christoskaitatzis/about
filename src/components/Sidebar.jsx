@@ -48,7 +48,10 @@ export default function Sidebar({ active }) {
         aria-label="Play the game"
         title="Play"
       >
-        <img src="/car.svg" alt="Portfolio park" />
+        <iframe src="/park-entry.html" title="Portfolio Park"
+        loading="lazy" scrolling="no"
+        style="width:100%;max-width:460px;aspect-ratio:16/8.2;border:0;border-radius:22px;display:block;box-shadow:0 18px 44px -18px rgba(196,68,23,.65)"></iframe>
+        {/* <img src="/car.svg" alt="Portfolio park" /> */}
        {/* <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
  
   <path d="M185 115C185 105 180 90 170 85C160 80 145 75 130 75C115 75 90 75 75 78C60 81 45 88 35 95C25 102 20 110 20 120V135C20 138 22 140 25 140H180C183 140 185 138 185 135V115Z" stroke="black" stroke-width="2" fill="#E0E0E0"/>
@@ -71,7 +74,7 @@ export default function Sidebar({ active }) {
   
   {/* <!-- Side Line Detail --> */}
   {/* <path d="M60 125H175" stroke="black" stroke-width="1" opacity="0.5"/>
-</svg> */} */}
+</svg> */} 
 
         {/* <span className="text-[11px] font-medium tracking-wide">
           Play
