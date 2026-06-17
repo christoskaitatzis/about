@@ -22,7 +22,6 @@
     transition: transform .35s cubic-bezier(.7,0,.2,1);
   }
   .pp-card:hover { transform: scale(1.012); }
-  .pp-card:hover .pp-arrow { transform: translateX(4px); }
 </style>
 </head>
 <body>
@@ -60,12 +59,9 @@
   <canvas id="ppCar" style="position: absolute; left: 50%; bottom: 11%; transform: translateX(-50%); width: 50%; max-width: 250px; height: 54%; display: block;"></canvas>
 
   <!-- label -->
-  <div style="position: absolute; top: 7%; left: 4%; right: 4%; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
-    <div>
-      <div style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(13px, 3.2vw, 16px); line-height: 1; color: #34404f; letter-spacing: -0.01em;">Portfolio Park</div>
-      <div style="margin-top: 5px; font-size: clamp(9px, 2.4vw, 11px); letter-spacing: 0.04em; color: #5b7591;">a 3D world of things I've made</div>
-    </div>
-    <div style="flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: #5b9c6e; color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(10px, 2.6vw, 12px); white-space: nowrap; box-shadow: 0 6px 16px -6px rgba(91,156,110,.6);">Drive in <span class="pp-arrow" style="display:inline-block;transition:transform .3s ease;">&rarr;</span></div>
+  <div style="position: absolute; top: 7%; left: 4%; right: 4%;">
+    <div style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(13px, 3.2vw, 16px); line-height: 1; color: #34404f; letter-spacing: -0.01em;">Portfolio Park</div>
+    <div style="margin-top: 5px; font-size: clamp(9px, 2.4vw, 11px); letter-spacing: 0.04em; color: #5b7591;">a 3D world of things I've made</div>
   </div>
 
 </a>
