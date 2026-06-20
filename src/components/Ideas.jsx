@@ -9,7 +9,7 @@ const IDEAS = [
   },
   {
     title: 'Applications and Their Impact',
-    body: 'Mobile applications have revolutionized how we communicate, access information, and interact with the world — from navigation and banking to remote healthcare. The versatility of applications continues to expand, enhancing quality of life at scale.',
+    body: 'Mobile applications have changed the way we communicate, access information and interact, from navigation and banking to remote healthcare. The versatility of applications continues to expand, enhancing quality of life at scale.',
   },
 ]
 
