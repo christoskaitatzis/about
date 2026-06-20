@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import Sidebar from './components/Sidebar'
+import Sidebar, { PortfolioParkCard } from './components/Sidebar'
 import About from './components/About'
 import Projects from './components/Projects'
 import Articles from './components/Articles'
@@ -55,7 +55,7 @@ export default function App() {
 
       {/* Mobile nav drawer */}
       {menuOpen && (
-        <div className="lg:hidden fixed inset-0 z-10 bg-white pt-16 px-8">
+        <div className="lg:hidden fixed inset-0 z-10 bg-white pt-16 px-8 pb-8 flex flex-col">
           <nav className="flex flex-col gap-6 mt-6">
             {SECTIONS.map((id) => (
               <button
@@ -70,6 +70,10 @@ export default function App() {
               </button>
             ))}
           </nav>
+      
+          <div className="flex-1" />
+      
+          <PortfolioParkCard />
         </div>
       )}
 
