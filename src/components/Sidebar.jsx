@@ -13,11 +13,12 @@ export default function Sidebar({ active }) {
 
   return (
     <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-64 border-r border-gray-100 bg-white flex-col px-8 py-10 z-10">
-
       {/* Profile */}
       <div className="flex items-center gap-3 mb-12">
         <div className="text-slate-900 font-semibold text-sm leading-tight">
-          Christos<br />Kaitatzis
+          Christos
+          <br />
+          Kaitatzis
         </div>
       </div>
 
@@ -38,38 +39,43 @@ export default function Sidebar({ active }) {
         ))}
       </nav>
 
-      {/* Spacer pushes bottom content down */}
+      {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Game launcher */}
-      <div
-        role="link"
-        tabIndex={0}
-        onClick={() => (window.location.href = '/portfolio_park.html')}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') window.location.href = '/portfolio_park.html'
-        }}
-        className="group cursor-pointer transition-colors"
-        aria-label="Play the game"
-        title="Play"
+      {/* Portfolio Park — card style matching main section */}
+      <a
+        href="/portfolio_park.html"
+        className="group block rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm no-underline"
+        aria-label="Play Portfolio Park"
       >
-        <iframe
-          src="/park-entry.html"
-          title="Portfolio Park"
-          loading="lazy"
-          style={{
-            width: '100%',
-            maxWidth: '460px',
-            aspectRatio: '16 / 8.2',
-            border: 0,
-            borderRadius: '22px',
-            display: 'block',
-            overflow: 'hidden',
-            pointerEvents: 'none',
-            boxShadow: '0 18px 44px -18px rgba(196,68,23,.65)',
-          }}
-        />
-      </div>
+        {/* Mini preview strip */}
+        <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden mb-3 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+          <iframe
+            src="/park-entry.html"
+            title="Portfolio Park preview"
+            loading="lazy"
+            tabIndex={-1}
+            className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-100"
+          />
+        </div>
+
+        {/* Card text — matching the title + url pattern from main cards */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-slate-800 text-sm font-medium leading-snug">
+              Portfolio Park
+            </div>
+            <div className="text-slate-400 text-xs mt-0.5 truncate">
+              3D interactive portfolio
+            </div>
+          </div>
+          <span className="text-slate-300 group-hover:text-slate-500 transition-colors mt-0.5 shrink-0">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 3.5L10.5 8L6 12.5" />
+            </svg>
+          </span>
+        </div>
+      </a>
     </aside>
   )
 }
