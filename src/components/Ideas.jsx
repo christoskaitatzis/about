@@ -19,7 +19,7 @@ export default function Ideas() {
       <div className="max-w-2xl">
         <p className="text-[0.65rem] font-semibold text-slate-400 tracking-[0.22em] uppercase mb-8">Ideas</p>
         <h2 className="text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-14">
-          Thoughts &amp; explorations
+          Thoughts on engineering
         </h2>
         <div className="flex flex-col gap-10">
           {IDEAS.map((idea) => (
