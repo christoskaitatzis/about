@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Go-Kart Circuit — Portfolio Park</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@800&display=swap">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #eef4f0; font-family: 'Space Mono', monospace; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body { position: fixed; inset: 0; touch-action: none; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pill { position: fixed; z-index: 60; padding: 9px 14px; border-radius: 999px; border: 1px solid #e0e7e2; background: rgba(255,255,255,.88); color: #34404f; font: 700 12px 'Space Mono', monospace; letter-spacing: .04em; cursor: pointer; touch-action: manipulation; box-shadow: 0 2px 8px rgba(0,0,0,.08); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .pill:hover { background: rgba(255,255,255,1); }
+  #back-link { top: 22px; left: 22px; }
+  #fs-toggle { top: 62px; left: 22px; }
+  #tilt-toggle { top: 106px; left: 22px; }
+  #hud { position: fixed; top: 22px; right: 24px; z-index: 9; background: rgba(255,255,255,.88); border: 1px solid #e0e7e2; border-radius: 14px; padding: 10px 14px; font: 700 11px 'Space Mono', monospace; color: #34404f; letter-spacing: .04em; box-shadow: 0 2px 8px rgba(0,0,0,.08); min-width: 130px; }
+  #hud .row { display: flex; justify-content: space-between; gap: 12px; margin: 2px 0; }
+  #hud .row .val { color: #5b9c6e; }
+  /* controls */
+  .ctrl { position: fixed; z-index: 8; width: 66px; height: 66px; border-radius: 50%; border: 1px solid #e0e7e2; background: rgba(255,255,255,.86); color: #34404f; font-size: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 14px -5px rgba(40,60,45,.35); touch-action: none; }
+  .ctrl.active { background: #5b9c6e; color: #fff; }
+  #ctrl-up    { right: 26px; bottom: 110px; }
+  #ctrl-down  { right: 26px; bottom: 36px;  }
+  #ctrl-left  { left: 26px;  bottom: 36px;  }
+  #ctrl-right { left: 110px; bottom: 36px;  }
+  /* tilt HUD */
+  #tilt-hud { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 8; display: none; align-items: center; gap: 10px; font: 10px 'Space Mono', monospace; color: #5b7591; }
+  #tilt-hud .bar-wrap { position: relative; width: 100px; height: 10px; border-radius: 5px; background: rgba(0,0,0,.08); overflow: hidden; }
+  #tilt-hud .bar-wrap .center { position: absolute; left: 50%; top: -1px; height: 12px; width: 2px; background: #34404f; border-radius: 1px; transform: translateX(-1px); }
+  #tilt-brake-bar { position: absolute; right: 50%; top: 0; height: 100%; width: 0; background: #e05555; border-radius: 5px; transition: width .05s; }
+  #tilt-gas-bar   { position: absolute; left: 50%;  top: 0; height: 100%; width: 0; background: #5b9c6e; border-radius: 5px; transition: width .05s; }
+  /* start overlay */
+  #start { position: fixed; inset: 0; z-index: 50; background: rgba(238,244,240,.86); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  #start .panel { background: rgba(255,255,255,.92); border: 1px solid #e0e7e2; border-radius: 22px; padding: 28px 36px; text-align: center; box-shadow: 0 20px 60px rgba(40,60,45,.18); max-width: 360px; }
+  #start h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: #34404f; margin: 0 0 6px; letter-spacing: -0.02em; }
+  #start .tag { color: #5b9c6e; font: 700 11px 'Space Mono', monospace; letter-spacing: .14em; }
+  #start p { color: #5b7591; font-size: 13px; line-height: 1.55; margin: 14px 0 18px; }
+  #start .go { display: inline-block; background: #5b9c6e; color: #fff; padding: 12px 22px; border-radius: 999px; font: 700 13px 'Space Mono', monospace; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<a id="back-link" class="pill" href="portfolio_park__20-06_.html">← back to park</a>
+<button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
+<button id="tilt-toggle" class="pill" type="button" style="display:none">📱 Tilt OFF</button>
+
+<div id="hud">
+  <div class="row"><span>LAP</span><span class="val" id="lap-val">1 / 3</span></div>
+  <div class="row"><span>TIME</span><span class="val" id="time-val">0.00</span></div>
+  <div class="row"><span>BEST</span><span class="val" id="best-val">—</span></div>
+  <div class="row"><span>SPEED</span><span class="val" id="speed-val">0</span></div>
+</div>
+
+<div id="title"></div>
+
+<button class="ctrl" id="ctrl-up"    data-key="ArrowUp">↑</button>
+<button class="ctrl" id="ctrl-down"  data-key="ArrowDown">↓</button>
+<button class="ctrl" id="ctrl-left"  data-key="ArrowLeft">←</button>
+<button class="ctrl" id="ctrl-right" data-key="ArrowRight">→</button>
+
+<div id="tilt-hud">
+  <span style="font-size:14px;font-weight:700;color:#e05555">B</span>
+  <div class="bar-wrap">
+    <div id="tilt-brake-bar"></div>
+    <div id="tilt-gas-bar"></div>
+    <div class="center"></div>
+  </div>
+  <span style="font-size:14px;font-weight:700;color:#5b9c6e">G</span>
+</div>
+
+<div id="start"><div class="panel">
+  <div class="tag">PORTFOLIO PARK</div>
+  <h1>GO-KART CIRCUIT</h1>
+  <p>3 laps. Stay on the asphalt — grass slows you down. Tap or press any key to start.</p>
+  <div class="go">Tap / Press any key →</div>
+</div></div>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const THREE = window.THREE;
+if (!THREE) { document.getElementById('start').innerHTML = '<div class="panel"><h1>Couldn\'t load Three.js</h1><p>Check your network and reload.</p></div>'; return; }
+
+const cv = document.getElementById('cv');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0xeef4f0, 1);
+
+const scene = new THREE.Color ? new THREE.Scene() : null;  // unused safe-init
+const sc = new THREE.Scene();
+sc.background = new THREE.Color(0xeef4f0);
+sc.fog = new THREE.Fog(0xeef4f0, 90, 220);
+
+const cam = new THREE.PerspectiveCamera(55, 1, 0.5, 500);
+cam.position.set(0, 14, 50);
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+resize(); window.addEventListener('resize', resize);
+
+// Lights
+sc.add(new THREE.HemisphereLight(0xf4fbf6, 0x8fc79c, 0.85));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+dirLight.position.set(40, 80, 20); sc.add(dirLight);
+
+// Grass ground
+const grass = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0xb6dca6 }));
+grass.rotation.x = -Math.PI / 2; sc.add(grass);
+
+// --- Track centerline (closed loop) ---
+const waypoints = [
+  new THREE.Vector3(  0, 0,  38),  // start/finish line
+  new THREE.Vector3( 38, 0,  38),
+  new THREE.Vector3( 62, 0,  28),
+  new THREE.Vector3( 72, 0,   8),
+  new THREE.Vector3( 70, 0, -16),
+  new THREE.Vector3( 52, 0, -30),
+  new THREE.Vector3( 26, 0, -22),  // chicane in
+  new THREE.Vector3(  4, 0, -34),  //  chicane out
+  new THREE.Vector3(-22, 0, -24),
+  new THREE.Vector3(-52, 0, -32),
+  new THREE.Vector3(-72, 0, -16),
+  new THREE.Vector3(-76, 0,  10),  // far west hairpin apex
+  new THREE.Vector3(-62, 0,  30),
+  new THREE.Vector3(-30, 0,  38),
+];
+const curve = new THREE.CatmullRomCurve3(waypoints, true, 'catmullrom', 0.5);
+const N = 480;
+const centerPts = curve.getPoints(N);
+const TRACK_HALF_W = 4.0;     // 8m wide track
+const KERB_W = 0.55;
+
+// Build the track mesh (a closed strip along the curve)
+function makeTrackStrip(halfW, color, yOffset, kerb) {
+  const positions = []; const uvs = []; const indices = [];
+  let traveled = 0;
+  for (let i = 0; i < N; i++) {
+    const p = centerPts[i];
+    const nx = centerPts[(i + 1) % N];
+    const tx = nx.x - p.x, tz = nx.z - p.z;
+    const tl = Math.hypot(tx, tz) || 1;
+    if (i > 0) traveled += tl;
+    // perpendicular in XZ plane (right-hand normal)
+    const px = -tz / tl, pz = tx / tl;
+    if (kerb) {
+      // For kerbs we want a thin band from halfW to halfW+KERB_W on BOTH sides — we'll call this twice instead
+      // Not used here; kerbs are built separately below
+    }
+    positions.push(p.x + px * halfW, yOffset, p.z + pz * halfW); // outer
+    positions.push(p.x - px * halfW, yOffset, p.z - pz * halfW); // inner
+    // uv: u along length, v across width
+    uvs.push(traveled * 0.15, 1);
+    uvs.push(traveled * 0.15, 0);
+  }
+  for (let i = 0; i < N; i++) {
+    const i0 = 2 * i, i1 = 2 * i + 1;
+    const i2 = 2 * ((i + 1) % N), i3 = 2 * ((i + 1) % N) + 1;
+    indices.push(i0, i1, i2);
+    indices.push(i1, i3, i2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
+}
+
+// Asphalt
+const track = makeTrackStrip(TRACK_HALF_W, 0x4a4d52, 0.04, false);
+sc.add(track);
+
+// White edge lines — two thin strips along each side
+function makeEdge(side) {
+  const positions = []; const indices = [];
+  const inner = TRACK_HALF_W - 0.08;
+  const outer = TRACK_HALF_W;
+  for (let i = 0; i < N; i++) {
+    const p = centerPts[i];
+    const nx = centerPts[(i + 1) % N];
+    const tx = nx.x - p.x, tz = nx.z - p.z;
+    const tl = Math.hypot(tx, tz) || 1;
+    const px = -tz / tl, pz = tx / tl;
+    positions.push(p.x + side * px * outer, 0.07, p.z + side * pz * outer);
+    positions.push(p.x + side * px * inner, 0.07, p.z + side * pz * inner);
+  }
+  for (let i = 0; i < N; i++) {
+    const i0 = 2 * i, i1 = 2 * i + 1;
+    const i2 = 2 * ((i + 1) % N), i3 = 2 * ((i + 1) % N) + 1;
+    indices.push(i0, i1, i2);
+    indices.push(i1, i3, i2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0xffffff }));
+}
+sc.add(makeEdge(1)); sc.add(makeEdge(-1));
+
+// Red/white kerbs at the tightest curve apexes (sample a few segments)
+function makeKerb(startI, lengthI, side) {
+  const positions = []; const indices = []; const colors = [];
+  const inner = TRACK_HALF_W;
+  const outer = TRACK_HALF_W + KERB_W;
+  for (let k = 0; k <= lengthI; k++) {
+    const idx = (startI + k) % N;
+    const p = centerPts[idx];
+    const nx = centerPts[(idx + 1) % N];
+    const tx = nx.x - p.x, tz = nx.z - p.z;
+    const tl = Math.hypot(tx, tz) || 1;
+    const px = -tz / tl, pz = tx / tl;
+    positions.push(p.x + side * px * outer, 0.08, p.z + side * pz * outer);
+    positions.push(p.x + side * px * inner, 0.08, p.z + side * pz * inner);
+    // alternating red/white
+    const c = (k % 2 === 0) ? [0.85, 0.18, 0.18] : [0.96, 0.96, 0.96];
+    colors.push(c[0], c[1], c[2]); colors.push(c[0], c[1], c[2]);
+  }
+  for (let k = 0; k < lengthI; k++) {
+    const i0 = 2 * k, i1 = 2 * k + 1;
+    const i2 = 2 * (k + 1), i3 = 2 * (k + 1) + 1;
+    indices.push(i0, i1, i2);
+    indices.push(i1, i3, i2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+}
+// Approximate apex indices for the major corners (by visual inspection of the waypoints)
+sc.add(makeKerb(110, 30, +1));  // east hairpin outer kerb
+sc.add(makeKerb(225, 25, -1));  // chicane apex
+sc.add(makeKerb(380, 35, +1));  // west hairpin outer kerb
+
+// Start/finish line — checkered band at index 0
+(function startFinish(){
+  const p = centerPts[0];
+  const nx = centerPts[1];
+  const tx = nx.x - p.x, tz = nx.z - p.z;
+  const tl = Math.hypot(tx, tz) || 1;
+  const px = -tz / tl, pz = tx / tl;
+  // checker canvas
+  const c = document.createElement('canvas'); c.width = 64; c.height = 16;
+  const ctx2 = c.getContext('2d');
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 2; j++) {
+    ctx2.fillStyle = ((i + j) & 1) ? '#1a1a1a' : '#ffffff';
+    ctx2.fillRect(i * 8, j * 8, 8, 8);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+  const sf = new THREE.Mesh(new THREE.PlaneGeometry(TRACK_HALF_W * 2, 1.6), new THREE.MeshLambertMaterial({ map: tex }));
+  sf.rotation.x = -Math.PI / 2;
+  sf.rotation.z = Math.atan2(tx, tz);  // align across the track
+  sf.position.set(p.x, 0.06, p.z);
+  sc.add(sf);
+  // gantry: two vertical pillars + crossbar (decorative)
+  const pillarMat = new THREE.MeshLambertMaterial({ color: 0xf2f2f2 });
+  for (let s = -1; s <= 1; s += 2) {
+    const x = p.x + s * px * (TRACK_HALF_W + 1.2);
+    const z = p.z + s * pz * (TRACK_HALF_W + 1.2);
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 4.5, 8), pillarMat);
+    pillar.position.set(x, 2.25, z); sc.add(pillar);
+  }
+  const angle = Math.atan2(tx, tz);
+  const cross = new THREE.Mesh(new THREE.BoxGeometry((TRACK_HALF_W + 1.2) * 2 + 0.36, 0.5, 0.3), new THREE.MeshLambertMaterial({ color: 0x5b9c6e }));
+  cross.position.set(p.x, 4.6, p.z); cross.rotation.y = angle;
+  sc.add(cross);
+})();
+
+// Tire stacks on the inside of tight corners (decoration)
+(function tireStacks(){
+  const tireMat = new THREE.MeshLambertMaterial({ color: 0x202024 });
+  function stack(x, z) {
+    for (let i = 0; i < 3; i++) {
+      const t = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.22, 6, 18), tireMat);
+      t.rotation.x = Math.PI / 2;
+      t.position.set(x, 0.25 + i * 0.42, z);
+      sc.add(t);
+    }
+  }
+  // Place a few stacks at the inside of curves
+  stack(60,  0);
+  stack(40, -22);
+  stack(0,  -20);
+  stack(-40, -22);
+  stack(-60,  0);
+}());
+
+// Trees scattered outside the track
+(function scenery(){
+  let s = 19840427;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  function makeTree() {
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 1.4, 7), new THREE.MeshLambertMaterial({ color: 0x6a4a2c }));
+    trunk.position.y = 0.7; g.add(trunk);
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2.8, 8), new THREE.MeshLambertMaterial({ color: 0x4f8c5b }));
+    crown.position.y = 2.5; g.add(crown);
+    return g;
+  }
+  // distance-from-track test — outside ring only
+  for (let i = 0; i < 90; i++) {
+    const x = (rnd() - 0.5) * 240, z = (rnd() - 0.5) * 240;
+    // find nearest centerline point
+    let minD = Infinity;
+    for (let j = 0; j < N; j += 6) {
+      const p = centerPts[j];
+      const d = (p.x - x) * (p.x - x) + (p.z - z) * (p.z - z);
+      if (d < minD) minD = d;
+    }
+    if (Math.sqrt(minD) < TRACK_HALF_W + 5) continue;     // too close to track
+    if (Math.sqrt(minD) > 90) continue;                    // beyond visible ring
+    const t = makeTree();
+    const sc1 = 0.75 + rnd() * 0.7;
+    t.scale.set(sc1, sc1, sc1);
+    t.position.set(x, 0, z);
+    sc.add(t);
+  }
+}());
+
+// --- The kart (slimmed-down version of the park's car) ---
+function makeKart() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.6, 3.8), new THREE.MeshLambertMaterial({ color: 0xff5d73 }));
+  body.position.y = 0.55; g.add(body);
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.3, 1.2), new THREE.MeshLambertMaterial({ color: 0xffd23f }));
+  nose.position.set(0, 0.45, 2.2); g.add(nose);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 1.0), new THREE.MeshLambertMaterial({ color: 0x34404f }));
+  seat.position.set(0, 1.0, -0.3); g.add(seat);
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  helmet.position.set(0, 1.65, -0.2); g.add(helmet);
+  // wheels
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.45, 14);
+  [[ -1.2, 0.42,  1.4], [1.2, 0.42, 1.4], [-1.2, 0.42, -1.4], [1.2, 0.42, -1.4]].forEach(([x,y,z]) => {
+    const w = new THREE.Mesh(wheelGeo, wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(x, y, z); g.add(w);
+  });
+  // shadow
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(2.4, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
+  sh.rotation.x = -Math.PI / 2; sh.position.y = 0.01; g.add(sh);
+  return g;
+}
+const kart = makeKart();
+sc.add(kart);
+
+// --- Car physics ---
+const car = {
+  x: centerPts[0].x, z: centerPts[0].z + 0,
+  angle: Math.atan2(centerPts[1].x - centerPts[0].x, centerPts[1].z - centerPts[0].z),
+  speed: 0,
+};
+// Slight offset back from the start line so player crosses it forward
+const _startTx = centerPts[1].x - centerPts[0].x, _startTz = centerPts[1].z - centerPts[0].z;
+const _stl = Math.hypot(_startTx, _startTz) || 1;
+car.x -= (_startTx / _stl) * 6; car.z -= (_startTz / _stl) * 6;
+
+// CIRCUIT physics: tuned to feel faster than the park's car
+const MAX_SPEED = 0.95;        // park is ~0.35-0.4
+const ACCEL = 0.022;
+const REVERSE_MAX = -0.35;
+const BRAKE = 0.045;
+const COAST = 0.992;
+const TURN = 0.05;
+const OFFTRACK_DECAY = 0.965;  // applied per-frame when on grass
+
+const keys = { up: false, down: false, left: false, right: false };
+
+function updatePhysics() {
+  // accel / brake
+  if (keys.up)        car.speed = Math.min(car.speed + ACCEL, MAX_SPEED);
+  else if (keys.down) car.speed = Math.max(car.speed - BRAKE, REVERSE_MAX);
+  else                car.speed *= COAST;
+
+  // turning only while moving
+  if (Math.abs(car.speed) > 0.01) {
+    const grip = Math.min(1, Math.abs(car.speed) / 0.35);
+    const dir = car.speed >= 0 ? 1 : -1;
+    if (keys.left)  car.angle += TURN * grip * dir;
+    if (keys.right) car.angle -= TURN * grip * dir;
+  }
+
+  const fx = Math.sin(car.angle), fz = Math.cos(car.angle);
+  car.x += fx * car.speed;
+  car.z += fz * car.speed;
+
+  // Off-track penalty — find nearest centerline point and slow down if too far
+  // Resume search from cached index for efficiency
+  let bestD2 = Infinity, bestI = 0;
+  const start = (lastIdx + N - 12) % N;
+  for (let k = 0; k < 24; k++) {  // search a window around last known index
+    const j = (start + k) % N;
+    const p = centerPts[j];
+    const d2 = (p.x - car.x) * (p.x - car.x) + (p.z - car.z) * (p.z - car.z);
+    if (d2 < bestD2) { bestD2 = d2; bestI = j; }
+  }
+  // If lost, fall back to full search
+  if (Math.sqrt(bestD2) > TRACK_HALF_W * 6) {
+    bestD2 = Infinity;
+    for (let j = 0; j < N; j += 2) {
+      const p = centerPts[j];
+      const d2 = (p.x - car.x) * (p.x - car.x) + (p.z - car.z) * (p.z - car.z);
+      if (d2 < bestD2) { bestD2 = d2; bestI = j; }
+    }
+  }
+  lastIdx = bestI;
+  const dist = Math.sqrt(bestD2);
+  if (dist > TRACK_HALF_W + 0.4) {
+    car.speed *= OFFTRACK_DECAY;
+  }
+
+  // Lap detection
+  // The track is parameterized 0..N. We track the player's progress index.
+  // To detect a full lap, we ensure they pass through quarters in order: 0..N/4..N/2..3N/4..N (=0)
+  const sector = Math.floor((bestI / N) * 4);
+  if (sectorPrev !== -1 && sectorPrev !== sector) {
+    // sector advanced sequentially?
+    if ((sectorPrev === 0 && sector === 1) || (sectorPrev === 1 && sector === 2) || (sectorPrev === 2 && sector === 3)) {
+      sectorsHit[sector] = true;
+    }
+    // crossed start/finish forward
+    if (sectorPrev === 3 && sector === 0 && sectorsHit[1] && sectorsHit[2] && sectorsHit[3]) {
+      finishLap();
+      sectorsHit[1] = sectorsHit[2] = sectorsHit[3] = false;
+    }
+    // crossed backwards — clear progress
+    if ((sectorPrev === 0 && sector === 3) || (sectorPrev === 1 && sector === 0) || (sectorPrev === 2 && sector === 1) || (sectorPrev === 3 && sector === 2)) {
+      sectorsHit[1] = sectorsHit[2] = sectorsHit[3] = false;
+    }
+  }
+  sectorPrev = sector;
+}
+let lastIdx = 0;
+let sectorPrev = -1;
+const sectorsHit = [false, false, false, false];
+
+// --- Lap timing ---
+const TOTAL_LAPS = 3;
+let lap = 1;
+let lapStartedAt = -1;
+let bestLap = null;
+let finished = false;
+
+function finishLap() {
+  if (lapStartedAt < 0) return;
+  const elapsed = (performance.now() - lapStartedAt) / 1000;
+  if (bestLap == null || elapsed < bestLap) bestLap = elapsed;
+  lap += 1;
+  if (lap > TOTAL_LAPS) {
+    finished = true;
+    showFinish(elapsed);
+    return;
+  }
+  lapStartedAt = performance.now();
+  updateHUD();
+}
+
+function showFinish(lastLapTime) {
+  const el = document.getElementById('start');
+  el.style.display = 'flex';
+  el.style.cursor = 'default';
+  el.innerHTML = `<div class="panel">
+    <div class="tag">FINISH</div>
+    <h1>NICE LAPS!</h1>
+    <p>Last lap: ${lastLapTime.toFixed(2)}s · Best lap: ${bestLap.toFixed(2)}s</p>
+    <a class="go" href="portfolio_park__20-06_.html">← back to park</a>
+  </div>`;
+}
+
+// --- Camera ---
+function updateCamera() {
+  const fx = Math.sin(car.angle), fz = Math.cos(car.angle);
+  const camDist = 12, camH = 7;
+  const tx = car.x - fx * camDist, tz = car.z - fz * camDist;
+  cam.position.x += (tx - cam.position.x) * 0.10;
+  cam.position.z += (tz - cam.position.z) * 0.10;
+  cam.position.y += (camH - cam.position.y) * 0.10;
+  cam.lookAt(car.x + fx * 6, 1.4, car.z + fz * 6);
+}
+
+function updateKartMesh() {
+  kart.position.set(car.x, 0, car.z);
+  kart.rotation.y = car.angle;
+  const lean = (keys.left ? 1 : keys.right ? -1 : 0) * Math.min(Math.abs(car.speed) * 0.15, 0.05);
+  kart.rotation.z = lean;
+}
+
+// --- HUD ---
+function updateHUD() {
+  document.getElementById('lap-val').textContent = Math.min(lap, TOTAL_LAPS) + ' / ' + TOTAL_LAPS;
+  document.getElementById('best-val').textContent = bestLap == null ? '—' : bestLap.toFixed(2);
+}
+function updateHUDTime() {
+  const t = lapStartedAt < 0 ? 0 : (performance.now() - lapStartedAt) / 1000;
+  document.getElementById('time-val').textContent = t.toFixed(2);
+  const kmh = Math.round(Math.abs(car.speed) * 90);  // scale to feel like km/h
+  document.getElementById('speed-val').textContent = kmh;
+}
+
+// --- Main loop ---
+let started = false;
+function loop() {
+  if (started && !finished) updatePhysics();
+  updateKartMesh();
+  updateCamera();
+  updateHUDTime();
+  renderer.render(sc, cam);
+  requestAnimationFrame(loop);
+}
+loop();
+
+// --- Inputs ---
+function setKey(name, down) {
+  if (name === 'ArrowUp')    keys.up = down;
+  if (name === 'ArrowDown')  keys.down = down;
+  if (name === 'ArrowLeft')  keys.left = down;
+  if (name === 'ArrowRight') keys.right = down;
+}
+window.addEventListener('keydown', (e) => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) === -1) {
+    if (!started) startRace();
+    return;
+  }
+  e.preventDefault(); setKey(e.key, true);
+  if (!started) startRace();
+});
+window.addEventListener('keyup', (e) => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) !== -1) { e.preventDefault(); setKey(e.key, false); }});
+
+// On-screen control buttons
+document.querySelectorAll('.ctrl').forEach((btn) => {
+  const key = btn.dataset.key;
+  const press = (e) => { e.preventDefault(); e.stopPropagation(); btn.classList.add('active'); setKey(key, true); if (!started) startRace(); };
+  const release = (e) => { e.preventDefault(); e.stopPropagation(); btn.classList.remove('active'); setKey(key, false); };
+  btn.addEventListener('pointerdown', press);
+  btn.addEventListener('pointerup', release);
+  btn.addEventListener('pointercancel', release);
+  btn.addEventListener('pointerleave', release);
+});
+
+// Start overlay click → start
+document.getElementById('start').addEventListener('click', () => { if (!finished) startRace(); });
+function startRace() {
+  started = true;
+  document.getElementById('start').style.display = 'none';
+  lapStartedAt = performance.now();
+  updateHUD();
+}
+
+// --- Fullscreen toggle ---
+const fsBtn = document.getElementById('fs-toggle');
+fsBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  const inFs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!inFs) {
+    const el = document.documentElement;
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (fn) { const p = fn.call(el); if (p && p.catch) p.catch(() => { fsBtn.textContent = '⛶ Not supported'; setTimeout(updateFsBtn, 1500); }); }
+    else { fsBtn.textContent = '⛶ Not supported'; setTimeout(updateFsBtn, 1500); }
+  } else {
+    const fn = document.exitFullscreen || document.webkitExitFullscreen;
+    if (fn) fn.call(document);
+  }
+});
+function updateFsBtn() {
+  const inFs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (inFs) { fsBtn.textContent = '⛶ Exit Fullscreen'; fsBtn.style.background = '#5b9c6e'; fsBtn.style.color = '#fff'; }
+  else      { fsBtn.textContent = '⛶ Fullscreen';       fsBtn.style.background = 'rgba(255,255,255,.88)'; fsBtn.style.color = '#34404f'; }
+}
+['fullscreenchange', 'webkitfullscreenchange'].forEach((ev) => document.addEventListener(ev, updateFsBtn));
+
+// --- Tilt mode (mobile only) ---
+const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if (isMobile) document.getElementById('tilt-toggle').style.display = '';
+
+const tilt = { on: false, c: false, nB: 60, sB: 0, sBg: 0, gO: false, bO: false, dF: 8 };
+function tiltHandler(e) {
+  if (!tilt.on) return;
+  const b = e.beta;
+  if (b == null) return;
+  if (!tilt.c) { tilt.nB = b; tilt.sB = b; tilt.sBg = b; tilt.c = true; }
+  tilt.sB  = tilt.sB  * 0.55 + b * 0.45;   // responsive — brake
+  tilt.sBg = tilt.sBg * 0.92 + b * 0.08;   // smoothed — gas
+  const db = tilt.sB - tilt.nB, dbg = tilt.sBg - tilt.nB;
+  const wG = tilt.gO ? (dbg < -tilt.dF * 0.55) : (dbg < -tilt.dF);
+  const wB = db > tilt.dF;
+  if (wG !== tilt.gO) { tilt.gO = wG; setKey('ArrowUp', wG); if (wG && !started) startRace(); }
+  if (wB !== tilt.bO) { tilt.bO = wB; setKey('ArrowDown', wB); }
+  // HUD bars
+  const gas = document.getElementById('tilt-gas-bar'); if (gas) gas.style.width = Math.min(100, Math.max(0, -db) / 30 * 100) + '%';
+  const brake = document.getElementById('tilt-brake-bar'); if (brake) brake.style.width = Math.min(100, Math.max(0, db) / 30 * 100) + '%';
+}
+function tiltOn() {
+  tilt.on = true; tilt.c = false;
+  window.addEventListener('deviceorientation', tiltHandler, true);
+  const t = document.getElementById('tilt-toggle');
+  t.textContent = '📱 Tilt ON'; t.style.background = '#5b9c6e'; t.style.color = '#fff';
+  document.getElementById('tilt-hud').style.display = 'flex';
+  ['ctrl-up','ctrl-down'].forEach((id) => { const el = document.getElementById(id); if (el) { el.style.opacity = '0.2'; el.style.pointerEvents = 'none'; } });
+}
+function tiltOff() {
+  tilt.on = false;
+  tilt.gO = tilt.bO = false; setKey('ArrowUp', false); setKey('ArrowDown', false);
+  window.removeEventListener('deviceorientation', tiltHandler, true);
+  const t = document.getElementById('tilt-toggle');
+  t.textContent = '📱 Tilt OFF'; t.style.background = 'rgba(255,255,255,.88)'; t.style.color = '#34404f';
+  document.getElementById('tilt-hud').style.display = 'none';
+  ['ctrl-up','ctrl-down'].forEach((id) => { const el = document.getElementById(id); if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; } });
+}
+document.getElementById('tilt-toggle').addEventListener('click', () => {
+  if (tilt.on) { tiltOff(); return; }
+  // iOS 13+ permission flow
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then((s) => { if (s === 'granted') tiltOn(); else alert('Motion permission denied.'); }).catch(() => alert('Motion permission error.'));
+  } else { tiltOn(); }
+});
+
+// Drive-on-tap behaviour for the canvas
+cv.addEventListener('pointerdown', (e) => {
+  if (e.target.closest && (e.target.closest('.ctrl') || e.target.closest('.pill') || e.target.closest('#hud'))) return;
+  if (!started) startRace();
+});
+})();
+</script>
+</body>
+</html>
