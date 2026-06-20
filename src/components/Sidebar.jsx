@@ -6,12 +6,11 @@ const NAV_ITEMS = [
   { id: 'contact', label: 'Contact' },
 ]
 
-// Extracted so we can reuse it on mobile
-export function PortfolioParkCard({ className = '' }) {
+export function PortfolioParkCard() {
   return (
     <a
       href="/portfolio_park.html"
-      className={`group block rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm no-underline ${className}`}
+      className="group block rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm no-underline"
       aria-label="Play Portfolio Park"
     >
       <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden mb-3 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
@@ -46,40 +45,31 @@ export default function Sidebar({ active }) {
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
   }
-
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-64 border-r border-gray-100 bg-white flex-col px-8 py-10 z-10">
-        <div className="flex items-center gap-3 mb-12">
-          <div className="text-slate-900 font-semibold text-sm leading-tight">
-            Christos<br />Kaitatzis
-          </div>
+    <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-64 border-r border-gray-100 bg-white flex-col px-8 py-10 z-10">
+      <div className="flex items-center gap-3 mb-12">
+        <div className="text-slate-900 font-semibold text-sm leading-tight">
+          Christos<br />Kaitatzis
         </div>
-        <nav className="flex flex-col gap-5">
-          {NAV_ITEMS.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => scrollTo(id)}
-              className={`text-left text-sm transition-colors duration-150 ${
-                active === id
-                  ? 'text-slate-800 font-medium'
-                  : 'text-slate-400 hover:text-slate-600 font-normal'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-        <div className="flex-1" />
-        <PortfolioParkCard />
-      </aside>
-
-      {/* Mobile: show just the Portfolio Park card */}
-      <div className="lg:hidden px-4 py-6">
-        <PortfolioParkCard />
       </div>
-    </>
+      <nav className="flex flex-col gap-5">
+        {NAV_ITEMS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => scrollTo(id)}
+            className={`text-left text-sm transition-colors duration-150 ${
+              active === id
+                ? 'text-slate-800 font-medium'
+                : 'text-slate-400 hover:text-slate-600 font-normal'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      <div className="flex-1" />
+      <PortfolioParkCard />
+    </aside>
   )
 }
 
