@@ -44,7 +44,7 @@
 <body>
 <canvas id="cv"></canvas>
 
-<a id="back-link" class="pill" href="portfolio_park__20-06_.html">← back to park</a>
+<a id="back-link" class="pill" href="portfolio_park.html">← back to park</a>
 <button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
 <button id="tilt-toggle" class="pill" type="button" style="display:none">📱 Tilt OFF</button>
 
@@ -135,8 +135,8 @@ const waypoints = [
 const curve = new THREE.CatmullRomCurve3(waypoints, true, 'catmullrom', 0.5);
 const N = 480;
 const centerPts = curve.getPoints(N);
-const TRACK_HALF_W = 6.0;     // 12m wide track (typical circuit)
-const KERB_W = 0.55;
+const TRACK_HALF_W = 7.0;     // 14m wide track (typical circuit)
+const KERB_W = 0.9;
 
 // Build the track mesh (a closed strip along the curve)
 function makeTrackStrip(halfW, color, yOffset, kerb) {
@@ -240,7 +240,7 @@ function makeKerb(startI, lengthI, side) {
 // Auto-detect corners and place red/white kerbs on the inside of every one
 (function placeCornerKerbs() {
   const STEP = 6;
-  const THRESH = 0.05;  // curvature threshold (normalized cross product)
+  const THRESH = 0.10;  // curvature threshold (normalized cross product)
   const corners = [];
   let cur = null;
   for (let i = 0; i < N; i++) {
@@ -264,12 +264,11 @@ function makeKerb(startI, lengthI, side) {
     }
   }
   if (cur && (cur.end - cur.start) >= 6) corners.push(cur);
-  // Place a kerb on the inside of each corner. Inside = opposite side of curvature.
-  // The perpendicular convention here is (px, pz) = (-tz, tx); curv>0 means the
-  // curve bends toward +perpendicular, so the apex (inside) is on -perpendicular.
+  // Each corner gets kerbs on BOTH sides (inside apex + outside track-out).
   corners.forEach(co => {
-    const side = co.sign > 0 ? -1 : +1;
-    sc.add(makeKerb(co.start, co.end - co.start, side));
+    const insideSide = co.sign > 0 ? -1 : +1;
+    sc.add(makeKerb(co.start, co.end - co.start, insideSide));   // inside (apex)
+    sc.add(makeKerb(co.start, co.end - co.start, -insideSide));  // outside (track-out)
   });
 })();
 
@@ -546,7 +545,7 @@ function showFinish(lastLapTime) {
     <div class="tag">FINISH</div>
     <h1>NICE LAPS!</h1>
     <p>Last lap: ${lastLapTime.toFixed(2)}s · Best lap: ${bestLap.toFixed(2)}s</p>
-    <a class="go" href="portfolio_park__20-06_.html">← back to park</a>
+    <a class="go" href="portfolio_park.html">← back to park</a>
   </div>`;
 }
 
