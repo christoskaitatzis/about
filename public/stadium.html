@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>World Cup 2026 Stadium — Portfolio Park</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@800&display=swap">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #eef4f0; font-family: 'Space Mono', monospace; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body { position: fixed; inset: 0; touch-action: none; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pill { position: fixed; z-index: 60; padding: 9px 14px; border-radius: 999px; border: 1px solid #e0e7e2; background: rgba(255,255,255,.88); color: #34404f; font: 700 12px 'Space Mono', monospace; letter-spacing: .04em; cursor: pointer; touch-action: manipulation; box-shadow: 0 2px 8px rgba(0,0,0,.08); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .pill:hover { background: rgba(255,255,255,1); }
+  #back-link { top: 22px; left: 22px; }
+  #fs-toggle { top: 62px; left: 22px; }
+  #tilt-toggle { top: 106px; left: 22px; }
+  #hud { position: fixed; top: 22px; right: 24px; z-index: 9; background: rgba(255,255,255,.88); border: 1px solid #e0e7e2; border-radius: 14px; padding: 10px 14px; font: 700 11px 'Space Mono', monospace; color: #34404f; letter-spacing: .04em; box-shadow: 0 2px 8px rgba(0,0,0,.08); min-width: 130px; }
+  #hud .row { display: flex; justify-content: space-between; gap: 12px; margin: 2px 0; }
+  #hud .row .val { color: #5b9c6e; }
+  /* controls */
+  .ctrl { position: fixed; z-index: 8; width: 66px; height: 66px; border-radius: 50%; border: 1px solid #e0e7e2; background: rgba(255,255,255,.86); color: #34404f; font-size: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 14px -5px rgba(40,60,45,.35); touch-action: none; }
+  .ctrl.active { background: #5b9c6e; color: #fff; }
+  #ctrl-up    { right: 26px; bottom: 110px; }
+  #ctrl-down  { right: 26px; bottom: 36px;  }
+  #ctrl-left  { left: 26px;  bottom: 36px;  }
+  #ctrl-right { left: 110px; bottom: 36px;  }
+  /* tilt HUD */
+  #tilt-hud { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 8; display: none; align-items: center; gap: 10px; font: 10px 'Space Mono', monospace; color: #5b7591; }
+  #tilt-hud .bar-wrap { position: relative; width: 100px; height: 10px; border-radius: 5px; background: rgba(0,0,0,.08); overflow: hidden; }
+  #tilt-hud .bar-wrap .center { position: absolute; left: 50%; top: -1px; height: 12px; width: 2px; background: #34404f; border-radius: 1px; transform: translateX(-1px); }
+  #tilt-brake-bar { position: absolute; right: 50%; top: 0; height: 100%; width: 0; background: #e05555; border-radius: 5px; transition: width .05s; }
+  #tilt-gas-bar   { position: absolute; left: 50%;  top: 0; height: 100%; width: 0; background: #5b9c6e; border-radius: 5px; transition: width .05s; }
+  /* start overlay */
+  #start { position: fixed; inset: 0; z-index: 50; background: rgba(238,244,240,.86); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  #start .panel { background: rgba(255,255,255,.92); border: 1px solid #e0e7e2; border-radius: 22px; padding: 28px 36px; text-align: center; box-shadow: 0 20px 60px rgba(40,60,45,.18); max-width: 360px; }
+  #start h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: #34404f; margin: 0 0 6px; letter-spacing: -0.02em; }
+  #start .tag { color: #5b9c6e; font: 700 11px 'Space Mono', monospace; letter-spacing: .14em; }
+  #start p { color: #5b7591; font-size: 13px; line-height: 1.55; margin: 14px 0 18px; }
+  #start .go { display: inline-block; background: #5b9c6e; color: #fff; padding: 12px 22px; border-radius: 999px; font: 700 13px 'Space Mono', monospace; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<a id="back-link" class="pill" href="portfolio_park.html">← back to park</a>
+<button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
+<button id="tilt-toggle" class="pill" type="button" style="display:none">📱 Tilt OFF</button>
+
+<div id="hud">
+  <div class="row"><span>WORLD CUP</span><span class="val">2026</span></div>
+  <div class="row"><span>SPEED</span><span class="val" id="speed-val">0</span></div>
+  <div class="row" style="margin-top:6px;color:#5b7591;font-weight:400"><span style="font-size:10px;letter-spacing:0">drive to the portal to return</span></div>
+</div>
+
+<div id="title"></div>
+
+<button class="ctrl" id="ctrl-up"    data-key="ArrowUp">↑</button>
+<button class="ctrl" id="ctrl-down"  data-key="ArrowDown">↓</button>
+<button class="ctrl" id="ctrl-left"  data-key="ArrowLeft">←</button>
+<button class="ctrl" id="ctrl-right" data-key="ArrowRight">→</button>
+
+<div id="tilt-hud">
+  <span style="font-size:14px;font-weight:700;color:#e05555">B</span>
+  <div class="bar-wrap">
+    <div id="tilt-brake-bar"></div>
+    <div id="tilt-gas-bar"></div>
+    <div class="center"></div>
+  </div>
+  <span style="font-size:14px;font-weight:700;color:#5b9c6e">G</span>
+</div>
+
+<div id="start"><div class="panel">
+  <div class="tag">PORTFOLIO PARK</div>
+  <h1>WORLD CUP 2026</h1>
+  <p>You are on the pitch. Drive to the glowing portal to return to Portfolio Park.</p>
+  <div class="go">Tap / Press any key →</div>
+</div></div>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const THREE = window.THREE;
+if (!THREE) { document.getElementById('start').innerHTML = '<div class="panel"><h1>Couldn\'t load Three.js</h1><p>Check your network and reload.</p></div>'; return; }
+
+const cv = document.getElementById('cv');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0xeef4f0, 1);
+
+const scene = new THREE.Color ? new THREE.Scene() : null;  // unused safe-init
+const sc = new THREE.Scene();
+sc.background = new THREE.Color(0xeef4f0);
+sc.fog = new THREE.Fog(0xeef4f0, 90, 220);
+
+const cam = new THREE.PerspectiveCamera(55, 1, 0.5, 500);
+cam.position.set(0, 14, 50);
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+resize(); window.addEventListener('resize', resize);
+
+// Lights
+sc.add(new THREE.HemisphereLight(0xf4fbf6, 0x8fc79c, 0.85));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+dirLight.position.set(40, 80, 20); sc.add(dirLight);
+
+// Sky / ambient ground tint
+sc.background = new THREE.Color(0x9bd4ff);
+sc.fog = new THREE.Fog(0x9bd4ff, 220, 500);
+
+// Outer concrete apron around the stadium
+const apron = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0xcfd3d6 }));
+apron.rotation.x = -Math.PI / 2; sc.add(apron);
+
+// Pitch dimensions (scaled down a bit from FIFA standard for gameplay feel)
+const PITCH_W = 50;   // along X
+const PITCH_L = 78;   // along Z
+
+// Pitch grass with mowing stripes
+const stripeCv = document.createElement('canvas'); stripeCv.width = 64; stripeCv.height = 64;
+{
+  const c = stripeCv.getContext('2d');
+  c.fillStyle = '#3da855'; c.fillRect(0, 0, 64, 32);
+  c.fillStyle = '#34944a'; c.fillRect(0, 32, 64, 32);
+}
+const grassTex = new THREE.CanvasTexture(stripeCv);
+grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+grassTex.repeat.set(1, 6);
+const pitch = new THREE.Mesh(new THREE.PlaneGeometry(PITCH_W, PITCH_L), new THREE.MeshLambertMaterial({ map: grassTex }));
+pitch.rotation.x = -Math.PI / 2;
+pitch.position.y = 0.02;
+sc.add(pitch);
+
+// Pitch markings (drawn on a transparent canvas, laid on top of grass)
+(function pitchLines() {
+  const W = 500, H = 780;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  c.strokeStyle = '#ffffff'; c.lineWidth = 4;
+  c.strokeRect(10, 10, W - 20, H - 20);
+  // halfway line
+  c.beginPath(); c.moveTo(10, H/2); c.lineTo(W - 10, H/2); c.stroke();
+  // center circle
+  c.beginPath(); c.arc(W/2, H/2, 65, 0, 2 * Math.PI); c.stroke();
+  // center spot
+  c.fillStyle = '#ffffff';
+  c.beginPath(); c.arc(W/2, H/2, 5, 0, 2 * Math.PI); c.fill();
+  // penalty boxes (top and bottom)
+  const pbW = 220, pbH = 90;
+  c.strokeRect((W - pbW) / 2, 10, pbW, pbH);
+  c.strokeRect((W - pbW) / 2, H - 10 - pbH, pbW, pbH);
+  // 6-yard boxes
+  const sbW = 100, sbH = 36;
+  c.strokeRect((W - sbW) / 2, 10, sbW, sbH);
+  c.strokeRect((W - sbW) / 2, H - 10 - sbH, sbW, sbH);
+  // penalty spots
+  c.beginPath(); c.arc(W/2, 70, 5, 0, 2 * Math.PI); c.fill();
+  c.beginPath(); c.arc(W/2, H - 70, 5, 0, 2 * Math.PI); c.fill();
+  // penalty arcs
+  c.beginPath(); c.arc(W/2, 70, 50, 0.18 * Math.PI, 0.82 * Math.PI); c.stroke();
+  c.beginPath(); c.arc(W/2, H - 70, 50, 1.18 * Math.PI, 1.82 * Math.PI); c.stroke();
+  // corner arcs
+  [[10, 10], [W - 10, 10], [10, H - 10], [W - 10, H - 10]].forEach(([cx, cy]) => {
+    c.beginPath(); c.arc(cx, cy, 10, 0, 2 * Math.PI); c.stroke();
+  });
+  const tex = new THREE.CanvasTexture(cv);
+  const lines = new THREE.Mesh(new THREE.PlaneGeometry(PITCH_W, PITCH_L), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+  lines.rotation.x = -Math.PI / 2;
+  lines.position.y = 0.04;
+  sc.add(lines);
+})();
+
+// Goals at both ends
+function makeGoal(zSign) {
+  const g = new THREE.Group();
+  const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const post = new THREE.CylinderGeometry(0.15, 0.15, 2.6, 10);
+  const goalW = 7.32;
+  const l = new THREE.Mesh(post, white); l.position.set(-goalW / 2, 1.3, 0); g.add(l);
+  const r = new THREE.Mesh(post, white); r.position.set( goalW / 2, 1.3, 0); g.add(r);
+  const cb = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, goalW, 10), white);
+  cb.rotation.z = Math.PI / 2;
+  cb.position.set(0, 2.6, 0);
+  g.add(cb);
+  // net (wireframe box)
+  const netMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.45 });
+  const net = new THREE.Mesh(new THREE.BoxGeometry(goalW, 2.6, 2.4), netMat);
+  net.position.set(0, 1.3, -zSign * 1.2);
+  g.add(net);
+  g.position.set(0, 0, zSign * (PITCH_L / 2 - 0.1));
+  return g;
+}
+sc.add(makeGoal(-1));
+sc.add(makeGoal(+1));
+
+// Stadium stands — 4 sides, tiered seating in alternating block colors
+function makeStand(width, depth, x, z, rotY) {
+  const g = new THREE.Group();
+  const TIERS = 5, TIER_H = 2.4;
+  const tierD = depth / TIERS;
+  const seatColors = [0x2a55b8, 0xe24a3a, 0x2a55b8, 0xffd23f, 0x2a55b8];
+  for (let t = 0; t < TIERS; t++) {
+    const slab = new THREE.Mesh(
+      new THREE.BoxGeometry(width, TIER_H, tierD),
+      new THREE.MeshLambertMaterial({ color: seatColors[t] })
+    );
+    slab.position.set(0, TIER_H / 2 + t * TIER_H, -depth / 2 + tierD / 2 + t * tierD);
+    g.add(slab);
+  }
+  // back wall
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(width, TIERS * TIER_H + 1, 0.7),
+    new THREE.MeshLambertMaterial({ color: 0xb0b6bb })
+  );
+  back.position.set(0, (TIERS * TIER_H) / 2, depth / 2);
+  g.add(back);
+  // pitch-side low wall
+  const front = new THREE.Mesh(
+    new THREE.BoxGeometry(width, 1.4, 0.4),
+    new THREE.MeshLambertMaterial({ color: 0xe7eaed })
+  );
+  front.position.set(0, 0.7, -depth / 2 - 0.2);
+  g.add(front);
+  // roof — simple translucent overhang
+  const roof = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.6, 0.3, depth * 0.6),
+    new THREE.MeshLambertMaterial({ color: 0x2a3848 })
+  );
+  roof.position.set(0, TIERS * TIER_H + 1.2, depth * 0.1);
+  g.add(roof);
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  return g;
+}
+
+const STAND_DEPTH = 16;
+const STAND_GAP = 4;  // gap between pitch edge and stand front
+// Behind goals (north/south)
+sc.add(makeStand(PITCH_W + 36, STAND_DEPTH, 0, -(PITCH_L / 2 + STAND_GAP + STAND_DEPTH / 2), 0));
+sc.add(makeStand(PITCH_W + 36, STAND_DEPTH, 0,  (PITCH_L / 2 + STAND_GAP + STAND_DEPTH / 2), Math.PI));
+// Long sides (east/west)
+sc.add(makeStand(PITCH_L + 20, STAND_DEPTH,  (PITCH_W / 2 + STAND_GAP + STAND_DEPTH / 2), 0,  Math.PI / 2));
+sc.add(makeStand(PITCH_L + 20, STAND_DEPTH, -(PITCH_W / 2 + STAND_GAP + STAND_DEPTH / 2), 0, -Math.PI / 2));
+
+// Scoreboards above the north and south stands
+function makeScoreboard(zSign) {
+  const g = new THREE.Group();
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x2a3848 });
+  const poleL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 18, 0.5), poleMat);
+  poleL.position.set(-8, 9, 0); g.add(poleL);
+  const poleR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 18, 0.5), poleMat);
+  poleR.position.set( 8, 9, 0); g.add(poleR);
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 256;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#0a1530'; c.fillRect(0, 0, 1024, 256);
+  c.strokeStyle = '#ffd23f'; c.lineWidth = 10; c.strokeRect(8, 8, 1008, 240);
+  c.fillStyle = '#ffd23f';
+  c.font = "800 110px Syne, sans-serif";
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('WORLD CUP 2026', 512, 130);
+  const tex = new THREE.CanvasTexture(cv);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(18, 4.5), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+  screen.position.set(0, 14, 0);
+  // face the pitch
+  screen.rotation.y = zSign > 0 ? Math.PI : 0;
+  g.add(screen);
+  g.position.set(0, 0, zSign * (PITCH_L / 2 + STAND_GAP + STAND_DEPTH + 1));
+  return g;
+}
+sc.add(makeScoreboard(-1));
+sc.add(makeScoreboard(+1));
+
+// Portal back to portfolio park (placed near one end of the pitch, on the centerline)
+const portal = new THREE.Group();
+const portalRing = new THREE.Mesh(
+  new THREE.TorusGeometry(2.6, 0.36, 10, 28),
+  new THREE.MeshPhongMaterial({ color: 0x6cc6ff, emissive: 0x2a6a9a, shininess: 90 })
+);
+portalRing.rotation.x = Math.PI / 2;
+portalRing.position.y = 0.45;
+portal.add(portalRing);
+const portalDisc = new THREE.Mesh(
+  new THREE.CircleGeometry(2.4, 28),
+  new THREE.MeshBasicMaterial({ color: 0xa6e0ff, transparent: true, opacity: 0.55 })
+);
+portalDisc.rotation.x = -Math.PI / 2;
+portalDisc.position.y = 0.35;
+portal.add(portalDisc);
+// sign above
+(function portalSign() {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#5b9c6e'; c.fillRect(0, 0, 512, 128);
+  c.strokeStyle = '#ffffff'; c.lineWidth = 6; c.strokeRect(6, 6, 500, 116);
+  c.fillStyle = '#ffffff';
+  c.font = "800 52px Syne, sans-serif";
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('← PORTFOLIO PARK', 256, 64);
+  const tex = new THREE.CanvasTexture(cv);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.7), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+  sign.position.set(0, 4.6, 0);
+  portal.add(sign);
+  // two thin poles
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x2a3848 });
+  const pL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4, 0.15), poleMat); pL.position.set(-3.2, 2, 0); portal.add(pL);
+  const pR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4, 0.15), poleMat); pR.position.set( 3.2, 2, 0); portal.add(pR);
+})();
+const PORTAL_POS = { x: 0, z: -PITCH_L / 2 + 12, r: 4 };
+portal.position.set(PORTAL_POS.x, 0, PORTAL_POS.z);
+sc.add(portal);
+
+// --- The car: silver Audi A3 (same as Portfolio Park) ---
+const shadowMat = new THREE.MeshBasicMaterial({ color: 0x3f6a49, transparent: true, opacity: 0.18, depthWrite: false });
+function makeCar() {
+  const g = new THREE.Group();
+  const silver = new THREE.MeshPhongMaterial({ color: 0xc9ced3, shininess: 90, specular: 0xb4bac0 });
+  const glass = new THREE.MeshPhongMaterial({ color: 0x0e1014, shininess: 110, specular: 0x556070 });
+  const black = new THREE.MeshLambertMaterial({ color: 0x191b1f });
+  const chrome = new THREE.MeshPhongMaterial({ color: 0xcfd4d9, shininess: 130, specular: 0xffffff });
+  const add = (geo, mat, x, y, z, rx, ry, rz) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    if (rx) m.rotation.x = rx; if (ry) m.rotation.y = ry; if (rz) m.rotation.z = rz;
+    g.add(m); return m;
+  };
+  const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+  // lower body tub
+  add(Box(1.86, 0.5, 4.2), silver, 0, 0.66, 0);
+  add(Box(1.74, 0.42, 3.95), silver, 0, 1.04, -0.05);
+  add(Box(1.72, 0.14, 1.45), silver, 0, 1.12, 1.42, -0.16);
+  add(Box(1.66, 0.14, 0.95), silver, 0, 1.16, -1.72, 0.34);
+  // greenhouse
+  add(Box(1.6, 0.6, 1.95), glass, 0, 1.5, -0.15);
+  add(Box(1.56, 0.66, 0.1), glass, 0, 1.52, 0.86, 0.56);
+  add(Box(1.5, 0.56, 0.1), glass, 0, 1.5, -1.12, -0.62);
+  add(Box(0.06, 0.42, 1.7), glass, 0.8, 1.55, -0.12);
+  add(Box(0.06, 0.42, 1.7), glass, -0.8, 1.55, -0.12);
+  add(Box(1.46, 0.16, 1.35), silver, 0, 1.82, -0.28);
+  add(Box(1.66, 0.05, 3.4), chrome, 0, 1.26, -0.05);
+  // front
+  add(Box(1.02, 0.82, 0.06), chrome, 0, 0.72, 2.07);
+  add(Box(0.86, 0.66, 0.1), black, 0, 0.7, 2.1);
+  for (let i = 0; i < 3; i++) add(Box(0.82, 0.03, 0.12), chrome, 0, 0.52 + i * 0.18, 2.12);
+  const hl = new THREE.MeshPhongMaterial({ color: 0xeaf2ff, emissive: 0x39455e });
+  add(Box(0.62, 0.24, 0.12), hl, 0.66, 1.0, 2.0, 0, -0.32);
+  add(Box(0.62, 0.24, 0.12), hl, -0.66, 1.0, 2.0, 0, 0.32);
+  add(Box(1.3, 0.22, 0.18), black, 0, 0.4, 2.08);
+  // rear
+  const tl = new THREE.MeshPhongMaterial({ color: 0xcc2418, emissive: 0x44090a });
+  add(Box(0.58, 0.26, 0.1), tl, 0.62, 1.04, -2.07);
+  add(Box(0.58, 0.26, 0.1), tl, -0.62, 1.04, -2.07);
+  // bumpers / sills
+  add(Box(1.92, 0.26, 0.34), black, 0, 0.36, 1.96);
+  add(Box(1.92, 0.26, 0.34), black, 0, 0.36, -1.96);
+  add(Box(0.1, 0.22, 3.0), black, 0.92, 0.42, 0);
+  add(Box(0.1, 0.22, 3.0), black, -0.92, 0.42, 0);
+  // mirrors
+  add(Box(0.3, 0.16, 0.26), silver, 1.04, 1.34, 0.74);
+  add(Box(0.3, 0.16, 0.26), silver, -1.04, 1.34, 0.74);
+  // wheels
+  const tire = new THREE.CylinderGeometry(0.52, 0.52, 0.36, 18);
+  const tireMat = new THREE.MeshLambertMaterial({ color: 0x111114 });
+  const alloy = new THREE.MeshPhongMaterial({ color: 0xb9bfc5, shininess: 80, specular: 0xffffff });
+  const capMat = new THREE.MeshPhongMaterial({ color: 0x2a2d33 });
+  [[1.0, 1.32], [-1.0, 1.32], [1.0, -1.32], [-1.0, -1.32]].forEach(([wx, wz]) => {
+    const w = new THREE.Mesh(tire, tireMat); w.rotation.z = Math.PI / 2; w.position.set(wx, 0.52, wz); g.add(w);
+    const face = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.38, 6), alloy);
+    face.rotation.z = Math.PI / 2; face.position.set(wx, 0.52, wz); g.add(face);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.4, 8), capMat);
+    cap.rotation.z = Math.PI / 2; cap.position.set(wx, 0.52, wz); g.add(cap);
+  });
+  // shadow
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(2.4, 20), shadowMat);
+  sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; g.add(sh);
+  return g;
+}
+const kart = makeCar();
+sc.add(kart);
+
+// --- Car physics ---
+// Spawn near center spot facing the portal (which sits near the south goal)
+const car = {
+  x: 0,
+  z: 6,
+  angle: Math.PI,  // facing -Z (toward portal)
+  speed: 0,
+};
+
+// CIRCUIT physics: tuned to feel faster than the park's car
+const MAX_SPEED = 0.95;        // park is ~0.35-0.4
+const ACCEL = 0.022;
+const REVERSE_MAX = -0.35;
+const BRAKE = 0.045;
+const COAST = 0.992;
+const TURN = 0.05;
+
+const keys = { up: false, down: false, left: false, right: false };
+
+function updatePhysics() {
+  // accel / brake
+  if (keys.up)        car.speed = Math.min(car.speed + ACCEL, MAX_SPEED);
+  else if (keys.down) car.speed = Math.max(car.speed - BRAKE, REVERSE_MAX);
+  else                car.speed *= COAST;
+
+  // turning only while moving
+  if (Math.abs(car.speed) > 0.01) {
+    const grip = Math.min(1, Math.abs(car.speed) / 0.35);
+    const dir = car.speed >= 0 ? 1 : -1;
+    if (keys.left)  car.angle += TURN * grip * dir;
+    if (keys.right) car.angle -= TURN * grip * dir;
+  }
+
+  const fx = Math.sin(car.angle), fz = Math.cos(car.angle);
+  car.x += fx * car.speed;
+  car.z += fz * car.speed;
+
+  // Soft pitch boundary — push the car back inside if it strays off the grass.
+  const HX = PITCH_W / 2 - 1.0;
+  const HZ = PITCH_L / 2 - 1.0;
+  if (car.x >  HX) { car.x =  HX; if (car.speed > 0) car.speed *= 0.4; }
+  if (car.x < -HX) { car.x = -HX; if (car.speed > 0) car.speed *= 0.4; }
+  if (car.z >  HZ) { car.z =  HZ; if (car.speed > 0) car.speed *= 0.4; }
+  if (car.z < -HZ) { car.z = -HZ; if (car.speed > 0) car.speed *= 0.4; }
+
+  // Portal proximity → navigate back to the park
+  if (!_navHome) {
+    const dx = PORTAL_POS.x - car.x, dz = PORTAL_POS.z - car.z;
+    if (Math.hypot(dx, dz) < PORTAL_POS.r) {
+      _navHome = true;
+      window.location.href = 'portfolio_park.html';
+    }
+  }
+}
+let _navHome = false;
+
+// --- Camera ---
+function updateCamera() {
+  const fx = Math.sin(car.angle), fz = Math.cos(car.angle);
+  const camDist = 12, camH = 7;
+  const tx = car.x - fx * camDist, tz = car.z - fz * camDist;
+  cam.position.x += (tx - cam.position.x) * 0.10;
+  cam.position.z += (tz - cam.position.z) * 0.10;
+  cam.position.y += (camH - cam.position.y) * 0.10;
+  cam.lookAt(car.x + fx * 6, 1.4, car.z + fz * 6);
+}
+
+function updateKartMesh() {
+  kart.position.set(car.x, 0, car.z);
+  kart.rotation.y = car.angle;
+  const lean = (keys.left ? 1 : keys.right ? -1 : 0) * Math.min(Math.abs(car.speed) * 0.15, 0.05);
+  kart.rotation.z = lean;
+}
+
+// --- HUD ---
+function updateHUD() {}  // static — nothing to update
+function updateHUDTime() {
+  const kmh = Math.round(Math.abs(car.speed) * 90);
+  document.getElementById('speed-val').textContent = kmh;
+}
+
+// --- Main loop ---
+let started = false;
+function loop() {
+  if (started) updatePhysics();
+  updateKartMesh();
+  updateCamera();
+  updateHUDTime();
+  renderer.render(sc, cam);
+  requestAnimationFrame(loop);
+}
+loop();
+
+// --- Inputs ---
+function setKey(name, down) {
+  if (name === 'ArrowUp')    keys.up = down;
+  if (name === 'ArrowDown')  keys.down = down;
+  if (name === 'ArrowLeft')  keys.left = down;
+  if (name === 'ArrowRight') keys.right = down;
+}
+window.addEventListener('keydown', (e) => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) === -1) {
+    if (!started) startRace();
+    return;
+  }
+  e.preventDefault(); setKey(e.key, true);
+  if (!started) startRace();
+});
+window.addEventListener('keyup', (e) => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) !== -1) { e.preventDefault(); setKey(e.key, false); }});
+
+// On-screen control buttons
+document.querySelectorAll('.ctrl').forEach((btn) => {
+  const key = btn.dataset.key;
+  const press = (e) => { e.preventDefault(); e.stopPropagation(); btn.classList.add('active'); setKey(key, true); if (!started) startRace(); };
+  const release = (e) => { e.preventDefault(); e.stopPropagation(); btn.classList.remove('active'); setKey(key, false); };
+  btn.addEventListener('pointerdown', press);
+  btn.addEventListener('pointerup', release);
+  btn.addEventListener('pointercancel', release);
+  btn.addEventListener('pointerleave', release);
+});
+
+// Start overlay click → start
+document.getElementById('start').addEventListener('click', () => { startRace(); });
+function startRace() {
+  started = true;
+  document.getElementById('start').style.display = 'none';
+  updateHUD();
+}
+
+// --- Fullscreen toggle ---
+const fsBtn = document.getElementById('fs-toggle');
+fsBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  const inFs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!inFs) {
+    const el = document.documentElement;
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (fn) { const p = fn.call(el); if (p && p.catch) p.catch(() => { fsBtn.textContent = '⛶ Not supported'; setTimeout(updateFsBtn, 1500); }); }
+    else { fsBtn.textContent = '⛶ Not supported'; setTimeout(updateFsBtn, 1500); }
+  } else {
+    const fn = document.exitFullscreen || document.webkitExitFullscreen;
+    if (fn) fn.call(document);
+  }
+});
+function updateFsBtn() {
+  const inFs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (inFs) { fsBtn.textContent = '⛶ Exit Fullscreen'; fsBtn.style.background = '#5b9c6e'; fsBtn.style.color = '#fff'; }
+  else      { fsBtn.textContent = '⛶ Fullscreen';       fsBtn.style.background = 'rgba(255,255,255,.88)'; fsBtn.style.color = '#34404f'; }
+}
+['fullscreenchange', 'webkitfullscreenchange'].forEach((ev) => document.addEventListener(ev, updateFsBtn));
+
+// --- Tilt mode (mobile only) ---
+const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if (isMobile) document.getElementById('tilt-toggle').style.display = '';
+
+const tilt = { on: false, c: false, nB: 60, sB: 0, sBg: 0, gO: false, bO: false, dF: 8 };
+function tiltHandler(e) {
+  if (!tilt.on) return;
+  const b = e.beta;
+  if (b == null) return;
+  if (!tilt.c) { tilt.nB = b; tilt.sB = b; tilt.sBg = b; tilt.c = true; }
+  tilt.sB  = tilt.sB  * 0.55 + b * 0.45;   // responsive — brake
+  tilt.sBg = tilt.sBg * 0.92 + b * 0.08;   // smoothed — gas
+  const db = tilt.sB - tilt.nB, dbg = tilt.sBg - tilt.nB;
+  const wG = tilt.gO ? (dbg < -tilt.dF * 0.55) : (dbg < -tilt.dF);
+  const wB = db > tilt.dF;
+  if (wG !== tilt.gO) { tilt.gO = wG; setKey('ArrowUp', wG); if (wG && !started) startRace(); }
+  if (wB !== tilt.bO) { tilt.bO = wB; setKey('ArrowDown', wB); }
+  // HUD bars
+  const gas = document.getElementById('tilt-gas-bar'); if (gas) gas.style.width = Math.min(100, Math.max(0, -db) / 30 * 100) + '%';
+  const brake = document.getElementById('tilt-brake-bar'); if (brake) brake.style.width = Math.min(100, Math.max(0, db) / 30 * 100) + '%';
+}
+function tiltOn() {
+  tilt.on = true; tilt.c = false;
+  window.addEventListener('deviceorientation', tiltHandler, true);
+  const t = document.getElementById('tilt-toggle');
+  t.textContent = '📱 Tilt ON'; t.style.background = '#5b9c6e'; t.style.color = '#fff';
+  document.getElementById('tilt-hud').style.display = 'flex';
+  ['ctrl-up','ctrl-down'].forEach((id) => { const el = document.getElementById(id); if (el) { el.style.opacity = '0.2'; el.style.pointerEvents = 'none'; } });
+}
+function tiltOff() {
+  tilt.on = false;
+  tilt.gO = tilt.bO = false; setKey('ArrowUp', false); setKey('ArrowDown', false);
+  window.removeEventListener('deviceorientation', tiltHandler, true);
+  const t = document.getElementById('tilt-toggle');
+  t.textContent = '📱 Tilt OFF'; t.style.background = 'rgba(255,255,255,.88)'; t.style.color = '#34404f';
+  document.getElementById('tilt-hud').style.display = 'none';
+  ['ctrl-up','ctrl-down'].forEach((id) => { const el = document.getElementById(id); if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; } });
+}
+document.getElementById('tilt-toggle').addEventListener('click', () => {
+  if (tilt.on) { tiltOff(); return; }
+  // iOS 13+ permission flow
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then((s) => { if (s === 'granted') tiltOn(); else alert('Motion permission denied.'); }).catch(() => alert('Motion permission error.'));
+  } else { tiltOn(); }
+});
+
+// Drive-on-tap behaviour for the canvas
+cv.addEventListener('pointerdown', (e) => {
+  if (e.target.closest && (e.target.closest('.ctrl') || e.target.closest('.pill') || e.target.closest('#hud'))) return;
+  if (!started) startRace();
+});
+})();
+</script>
+</body>
+</html>
