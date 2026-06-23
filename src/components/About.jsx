@@ -36,7 +36,7 @@ export default function About() {
         </p>
 
         <p className="text-slate-600 text-base leading-relaxed mb-14">
-          Based in Greece. Currently contributing to delivering top-tier mobile solutions at
+          Based in Greece. Currently contributing to delivering top-tier software solutions at
           scale.
         </p>
 
