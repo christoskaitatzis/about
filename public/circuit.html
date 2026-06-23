@@ -43,8 +43,10 @@
 </head>
 <body>
 <canvas id="cv"></canvas>
+<div id="page-fade" style="position:fixed;inset:0;z-index:99999;background:#eef4f0;opacity:1;transition:opacity .55s ease;pointer-events:none;will-change:opacity"></div>
 
-<a id="back-link" class="pill" href="portfolio_park.html">← back to park</a>
+
+<a id="back-link" class="pill" href="portfolio_park.html" onclick="event.preventDefault(); window.__fadeNav(this.href); return false;">← back to park</a>
 <button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
 <button id="tilt-toggle" class="pill" type="button" style="display:none">📱 Tilt OFF</button>
 
@@ -84,6 +86,11 @@
 (function(){
 'use strict';
 const THREE = window.THREE;
+  // page transition fade
+  const _pf = document.getElementById('page-fade');
+  if (_pf) { requestAnimationFrame(() => requestAnimationFrame(() => { _pf.style.opacity = '0'; })); }
+  window.__fadeNav = function(u){ if(_pf){ _pf.style.pointerEvents='auto'; _pf.style.opacity='1'; setTimeout(()=>{ window.location.href = u; }, 560); } else { window.location.href = u; } };
+
 if (!THREE) { document.getElementById('start').innerHTML = '<div class="panel"><h1>Couldn\'t load Three.js</h1><p>Check your network and reload.</p></div>'; return; }
 
 const cv = document.getElementById('cv');
@@ -117,26 +124,27 @@ grass.rotation.x = -Math.PI / 2; sc.add(grass);
 
 // --- Track centerline (closed loop) ---
 const waypoints = [
-  new THREE.Vector3(  0, 0,  38),  // start/finish line
-  new THREE.Vector3( 38, 0,  38),
-  new THREE.Vector3( 62, 0,  28),
-  new THREE.Vector3( 72, 0,   8),
-  new THREE.Vector3( 70, 0, -16),
-  new THREE.Vector3( 52, 0, -30),
-  new THREE.Vector3( 26, 0, -22),  // chicane in
-  new THREE.Vector3(  4, 0, -34),  //  chicane out
-  new THREE.Vector3(-22, 0, -24),
-  new THREE.Vector3(-52, 0, -32),
-  new THREE.Vector3(-72, 0, -16),
-  new THREE.Vector3(-76, 0,  10),  // far west hairpin apex
-  new THREE.Vector3(-62, 0,  30),
-  new THREE.Vector3(-30, 0,  38),
+  new THREE.Vector3(   0, 0,  55),  // start/finish — long front straight
+  new THREE.Vector3(  55, 0,  55),
+  new THREE.Vector3(  90, 0,  38),  // T1: sweeping right
+  new THREE.Vector3( 100, 0,   0),
+  new THREE.Vector3(  90, 0, -38),  // T2: long right
+  new THREE.Vector3(  60, 0, -58),
+  new THREE.Vector3(  25, 0, -52),  // chicane right entry
+  new THREE.Vector3(  -2, 0, -28),  // chicane left
+  new THREE.Vector3( -28, 0, -50),
+  new THREE.Vector3( -65, 0, -58),  // back straight
+  new THREE.Vector3( -98, 0, -42),
+  new THREE.Vector3(-115, 0,  -8),  // west hairpin entry
+  new THREE.Vector3(-104, 0,  32),  // hairpin apex
+  new THREE.Vector3( -72, 0,  52),
+  new THREE.Vector3( -32, 0,  58),
 ];
 const curve = new THREE.CatmullRomCurve3(waypoints, true, 'catmullrom', 0.5);
 const N = 480;
 const centerPts = curve.getPoints(N);
-const TRACK_HALF_W = 7.0;     // 14m wide track (typical circuit)
-const KERB_W = 0.9;
+const TRACK_HALF_W = 8.0;     // 16m wide track (clearly visible)
+const KERB_W = 1.0;
 
 // Build the track mesh (a closed strip along the curve)
 function makeTrackStrip(halfW, color, yOffset, kerb) {
@@ -175,7 +183,7 @@ function makeTrackStrip(halfW, color, yOffset, kerb) {
 }
 
 // Asphalt
-const track = makeTrackStrip(TRACK_HALF_W, 0x4a4d52, 0.04, false);
+const track = makeTrackStrip(TRACK_HALF_W, 0x4a4d52, 0.20, false);
 sc.add(track);
 
 // White edge lines — two thin strips along each side
@@ -189,8 +197,8 @@ function makeEdge(side) {
     const tx = nx.x - p.x, tz = nx.z - p.z;
     const tl = Math.hypot(tx, tz) || 1;
     const px = -tz / tl, pz = tx / tl;
-    positions.push(p.x + side * px * outer, 0.07, p.z + side * pz * outer);
-    positions.push(p.x + side * px * inner, 0.07, p.z + side * pz * inner);
+    positions.push(p.x + side * px * outer, 0.22, p.z + side * pz * outer);
+    positions.push(p.x + side * px * inner, 0.22, p.z + side * pz * inner);
   }
   for (let i = 0; i < N; i++) {
     const i0 = 2 * i, i1 = 2 * i + 1;
@@ -206,41 +214,36 @@ function makeEdge(side) {
 }
 sc.add(makeEdge(1)); sc.add(makeEdge(-1));
 
-// Red/white kerbs at the tightest curve apexes (sample a few segments)
+// Red/white kerbs as actual 3D extruded blocks along the track edge
+const KERB_RED = new THREE.MeshLambertMaterial({ color: 0xd9261f });
+const KERB_WHITE = new THREE.MeshLambertMaterial({ color: 0xf6f6f6 });
 function makeKerb(startI, lengthI, side) {
-  const positions = []; const indices = []; const colors = [];
-  const inner = TRACK_HALF_W;
-  const outer = TRACK_HALF_W + KERB_W;
-  for (let k = 0; k <= lengthI; k++) {
-    const idx = (startI + k) % N;
-    const p = centerPts[idx];
-    const nx = centerPts[(idx + 1) % N];
-    const tx = nx.x - p.x, tz = nx.z - p.z;
-    const tl = Math.hypot(tx, tz) || 1;
-    const px = -tz / tl, pz = tx / tl;
-    positions.push(p.x + side * px * outer, 0.08, p.z + side * pz * outer);
-    positions.push(p.x + side * px * inner, 0.08, p.z + side * pz * inner);
-    // alternating red/white
-    const c = (k % 2 === 0) ? [0.85, 0.18, 0.18] : [0.96, 0.96, 0.96];
-    colors.push(c[0], c[1], c[2]); colors.push(c[0], c[1], c[2]);
-  }
+  const g = new THREE.Group();
+  const innerR = TRACK_HALF_W;
+  const blockH = 0.32;
+  const blockY = 0.21 + blockH / 2;  // sits flush with the asphalt surface (y=0.20)
   for (let k = 0; k < lengthI; k++) {
-    const i0 = 2 * k, i1 = 2 * k + 1;
-    const i2 = 2 * (k + 1), i3 = 2 * (k + 1) + 1;
-    indices.push(i0, i1, i2);
-    indices.push(i1, i3, i2);
+    const idx = (startI + k) % N;
+    const idx2 = (startI + k + 1) % N;
+    const p = centerPts[idx];
+    const p2 = centerPts[idx2];
+    const tx = p2.x - p.x, tz = p2.z - p.z;
+    const segLen = Math.hypot(tx, tz) || 1;
+    const px = -tz / segLen, pz = tx / segLen;
+    const cx = (p.x + p2.x) / 2 + side * px * (innerR + KERB_W / 2);
+    const cz = (p.z + p2.z) / 2 + side * pz * (innerR + KERB_W / 2);
+    const mat = (k % 2 === 0) ? KERB_RED : KERB_WHITE;
+    const block = new THREE.Mesh(new THREE.BoxGeometry(segLen * 1.04, blockH, KERB_W), mat);
+    block.position.set(cx, blockY, cz);
+    block.rotation.y = -Math.atan2(tz, tx);
+    g.add(block);
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
-  return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  return g;
 }
 // Auto-detect corners and place red/white kerbs on the inside of every one
 (function placeCornerKerbs() {
   const STEP = 6;
-  const THRESH = 0.10;  // curvature threshold (normalized cross product)
+  const THRESH = 0.07;  // curvature threshold (normalized cross product)
   const corners = [];
   let cur = null;
   for (let i = 0; i < N; i++) {
@@ -291,7 +294,7 @@ function makeKerb(startI, lengthI, side) {
   const sf = new THREE.Mesh(new THREE.PlaneGeometry(TRACK_HALF_W * 2, 1.6), new THREE.MeshLambertMaterial({ map: tex }));
   sf.rotation.x = -Math.PI / 2;
   sf.rotation.z = Math.atan2(tx, tz);  // align across the track
-  sf.position.set(p.x, 0.06, p.z);
+  sf.position.set(p.x, 0.23, p.z);
   sc.add(sf);
   // gantry: two vertical pillars + crossbar (decorative)
   const pillarMat = new THREE.MeshLambertMaterial({ color: 0xf2f2f2 });
@@ -319,11 +322,11 @@ function makeKerb(startI, lengthI, side) {
     }
   }
   // Place a few stacks at the inside of curves
-  stack(60,  0);
-  stack(40, -22);
-  stack(0,  -20);
-  stack(-40, -22);
-  stack(-60,  0);
+  stack(  80,    0);
+  stack(  56,  -34);
+  stack( -12,  -38);
+  stack( -60,  -36);
+  stack( -88,    8);
 }());
 
 // Trees scattered outside the track
@@ -545,7 +548,7 @@ function showFinish(lastLapTime) {
     <div class="tag">FINISH</div>
     <h1>NICE LAPS!</h1>
     <p>Last lap: ${lastLapTime.toFixed(2)}s · Best lap: ${bestLap.toFixed(2)}s</p>
-    <a class="go" href="portfolio_park.html">← back to park</a>
+    <a class="go" href="portfolio_park.html" onclick="event.preventDefault(); window.__fadeNav(this.href); return false;">← back to park</a>
   </div>`;
 }
 
