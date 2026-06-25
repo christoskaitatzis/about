@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@800&display=swap">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; overflow: hidden; background: #cfe5ee; height: 100%; }
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #e0a47a; height: 100%; }
   body {
     font-family: 'Space Mono', monospace;
     color: #34404f;
@@ -73,7 +73,7 @@
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div id="page-fade" style="position:fixed;inset:0;z-index:99999;background:#cfe5ee;opacity:1;transition:opacity .55s ease;pointer-events:none;will-change:opacity"></div>
+<div id="page-fade" style="position:fixed;inset:0;z-index:99999;background:#e0a47a;opacity:1;transition:opacity .55s ease;pointer-events:none;will-change:opacity"></div>
 
 <a id="back-link" class="pill" href="portfolio_park.html" onclick="event.preventDefault(); window.__fadeNav(this.href); return false;">← back to park</a>
 <button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
@@ -120,8 +120,7 @@
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 
   const sc = new THREE.Scene();
-  sc.background = new THREE.Color(0xb6dff0);
-  sc.fog = new THREE.Fog(0xb6dff0, 140, 320);
+  sc.fog = new THREE.Fog(0xe7a578, 160, 360);
 
   const cam = new THREE.PerspectiveCamera(58, 1, 0.5, 600);
   cam.position.set(0, 14, 30);
@@ -135,22 +134,76 @@
   resize();
 
   // ----- lights -----
-  sc.add(new THREE.HemisphereLight(0xfff5d8, 0x6f8c80, 0.95));
-  const sun = new THREE.DirectionalLight(0xfff0d0, 0.85);
-  sun.position.set(60, 80, 30); sc.add(sun);
+  sc.add(new THREE.HemisphereLight(0xffd49a, 0x42394a, 0.7));
+  // warm, low directional light (the sunset)
+  const sun = new THREE.DirectionalLight(0xffb072, 0.95);
+  sun.position.set(-80, 28, -120); sc.add(sun);
+  // gentle fill from the opposite side to keep shadows from going pitch black
+  const fill = new THREE.DirectionalLight(0xa688aa, 0.25);
+  fill.position.set(60, 30, 100); sc.add(fill);
+
+  // ===== Sky dome + visible sun (track camera so they always sit "at infinity") =====
+  const skyboxGroup = new THREE.Group();
+  sc.add(skyboxGroup);
+  const skyCv = document.createElement('canvas'); skyCv.width = 32; skyCv.height = 512;
+  {
+    const sc2 = skyCv.getContext('2d');
+    const grad = sc2.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0.00, '#2c1b3d');    // zenith — twilight purple
+    grad.addColorStop(0.18, '#5d3b6a');    // upper sky
+    grad.addColorStop(0.35, '#a85a6e');    // pink band
+    grad.addColorStop(0.50, '#e07b48');    // bright sunset orange
+    grad.addColorStop(0.62, '#f4a868');    // glowing band near horizon
+    grad.addColorStop(0.78, '#f5d394');    // pale at horizon
+    grad.addColorStop(1.00, '#7c8a96');    // under-horizon (hidden by sea/ground)
+    sc2.fillStyle = grad; sc2.fillRect(0, 0, 32, 512);
+  }
+  const skyTex = new THREE.CanvasTexture(skyCv);
+  const skyDome = new THREE.Mesh(
+    new THREE.SphereGeometry(450, 24, 18),
+    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false })
+  );
+  skyboxGroup.add(skyDome);
+
+  // The visible sun — orange glowing disc + soft halo, sitting low above the horizon
+  const sunBall = new THREE.Mesh(
+    new THREE.SphereGeometry(14, 24, 18),
+    new THREE.MeshBasicMaterial({ color: 0xffe27b, fog: false })
+  );
+  sunBall.position.set(-110, 28, -300);
+  skyboxGroup.add(sunBall);
+  const sunHalo = new THREE.Mesh(
+    new THREE.SphereGeometry(24, 24, 18),
+    new THREE.MeshBasicMaterial({ color: 0xff9a52, transparent: true, opacity: 0.45, fog: false, depthWrite: false })
+  );
+  sunHalo.position.copy(sunBall.position);
+  skyboxGroup.add(sunHalo);
+  const sunGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(40, 24, 18),
+    new THREE.MeshBasicMaterial({ color: 0xff7a4a, transparent: true, opacity: 0.18, fog: false, depthWrite: false })
+  );
+  sunGlow.position.copy(sunBall.position);
+  skyboxGroup.add(sunGlow);
 
   // ----- shared materials & textures -----
-  const matSea     = new THREE.MeshLambertMaterial({ color: 0x3fa4c7 });
-  const matBeach   = new THREE.MeshLambertMaterial({ color: 0xe7d6b2 });
+  const matSea     = new THREE.MeshLambertMaterial({ color: 0x4a86a0 });   // dusk sea — slightly desaturated under sunset light
+  const matBeach   = new THREE.MeshLambertMaterial({ color: 0xddc99b });
   const matCliff   = new THREE.MeshLambertMaterial({ color: 0x8a7458 });
   const matGreen   = new THREE.MeshLambertMaterial({ color: 0x6e8a52 });
-  const matFol     = new THREE.MeshLambertMaterial({ color: 0x5d8a44 });
-  const matFolDark = new THREE.MeshLambertMaterial({ color: 0x4e7838 });
+  const matFol     = new THREE.MeshLambertMaterial({ color: 0x5d8a44 });   // cypress green
+  const matFolDark = new THREE.MeshLambertMaterial({ color: 0x4e7838 });   // pine green
+  const matOlive   = new THREE.MeshLambertMaterial({ color: 0x8fa37e });   // olive — silvery green
+  const matBouga1  = new THREE.MeshLambertMaterial({ color: 0xd64d8a });   // bougainvillea magenta
+  const matBouga2  = new THREE.MeshLambertMaterial({ color: 0xe07590 });   // bougainvillea pink
   const matWhite   = new THREE.MeshLambertMaterial({ color: 0xf3eee2 });
   const matRoof    = new THREE.MeshLambertMaterial({ color: 0xc25a3e });
   const matRail    = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+  const matStone   = new THREE.MeshLambertMaterial({ color: 0xc4b594 });
   const matTrunk   = new THREE.MeshLambertMaterial({ color: 0x7a4a2c });
   const matEdge    = new THREE.MeshBasicMaterial({ color: 0xfaf6e8 });
+  const matDash    = new THREE.MeshBasicMaterial({ color: 0xfff0bf });
+  const matBoatHull = new THREE.MeshLambertMaterial({ color: 0xf5efe4 });
+  const matBoatCab  = new THREE.MeshLambertMaterial({ color: 0x4a5a6e });
 
   // Asphalt — lighter, weathered coastal-road texture (similar to worn Irish coastal asphalt)
   const asphaltTex = (() => {
@@ -263,6 +316,62 @@
     m.position.set(x, 0.3, z);
     m.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
     return m;
+  }
+  function makeOlive(x, z) {
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 0.9, 6), matTrunk);
+    trunk.position.y = 0.45; g.add(trunk);
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.05, 0), matOlive);
+    crown.position.y = 1.3; g.add(crown);
+    g.position.set(x, 0, z);
+    g.rotation.y = Math.random() * Math.PI * 2;
+    const s2 = 0.9 + Math.random() * 0.5;
+    g.scale.set(s2, s2, s2);
+    return g;
+  }
+  function makeBougainvillea(x, z) {
+    const g = new THREE.Group();
+    const mat = Math.random() < 0.5 ? matBouga1 : matBouga2;
+    const main = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55 + Math.random() * 0.3, 0), mat);
+    main.position.y = 0.4; g.add(main);
+    if (Math.random() < 0.6) {
+      const extra = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), mat);
+      extra.position.set(0.4, 0.55, 0.2); g.add(extra);
+    }
+    g.position.set(x, 0, z);
+    g.rotation.y = Math.random() * Math.PI * 2;
+    return g;
+  }
+  function makeBoat(x, z, rotY) {
+    const g = new THREE.Group();
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 4.5), matBoatHull);
+    hull.position.y = 0.25; g.add(hull);
+    // pointed bow approximation
+    const bow = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.4, 6), matBoatHull);
+    bow.rotation.x = Math.PI / 2; bow.rotation.z = Math.PI / 2;
+    bow.position.set(0, 0.25, 2.8); g.add(bow);
+    // cabin
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.7, 1.6), matBoatCab);
+    cab.position.set(0, 0.85, -0.3); g.add(cab);
+    g.position.set(x, -1.6, z);
+    g.rotation.y = rotY;
+    return g;
+  }
+  function makeStoneWall(group, samples, startI, count) {
+    // Replaces guardrail posts on a short run with a continuous low stone wall on the sea side
+    for (let k = 0; k < count; k++) {
+      const i = startI + k;
+      if (i >= samples.length - 1) break;
+      const s0 = samples[i], s1 = samples[i + 1];
+      const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z);
+      const px = Math.cos(s0.a), pz = -Math.sin(s0.a);
+      const cx = (s0.x + s1.x) / 2 + px * (ROAD_HW + 0.6);
+      const cz = (s0.z + s1.z) / 2 + pz * (ROAD_HW + 0.6);
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(segLen * 1.03, 0.65, 0.3), matStone);
+      seg.position.set(cx, 0.43, cz);
+      seg.rotation.y = s0.a;
+      group.add(seg);
+    }
   }
   function makeHouse(x, z, rotY) {
     const g = new THREE.Group();
@@ -402,25 +511,45 @@
     group.add(makeEdgeLine(+1));
     group.add(makeEdgeLine(-1));
 
-    // Guardrail on the right (sea-side): white posts at intervals
-    for (let i = 1; i < samples.length; i += 3) {
+    // Dashed centerline — short cream dashes spaced like real road markings
+    for (let i = 0; i < samples.length - 1; i += 3) {
+      const s0 = samples[i], s1 = samples[i + 1];
+      const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z);
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, segLen * 0.55), matDash);
+      dash.position.set((s0.x + s1.x) / 2, 0.135, (s0.z + s1.z) / 2);
+      dash.rotation.y = s0.a;
+      group.add(dash);
+    }
+
+    // Guardrail on the sea side — usually thin white posts, occasionally replaced
+    // by a continuous low stone wall for a Mediterranean look.
+    const wallRun = Math.random() < 0.55;
+    const wallStart = Math.floor(Math.random() * (samples.length - 8));
+    const wallLen = 6 + Math.floor(Math.random() * 5);
+    if (wallRun) makeStoneWall(group, samples, wallStart, wallLen);
+    for (let i = 1; i < samples.length - 1; i += 2) {
+      if (wallRun && i >= wallStart && i < wallStart + wallLen) continue;
       const s = samples[i];
       const px = Math.cos(s.a), pz = -Math.sin(s.a);
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.0, 0.18), matRail);
-      post.position.set(s.x + px * (ROAD_HW + 0.4), 0.5, s.z + pz * (ROAD_HW + 0.4));
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.95, 0.16), matRail);
+      post.position.set(s.x + px * (ROAD_HW + 0.45), 0.475, s.z + pz * (ROAD_HW + 0.45));
       post.rotation.y = -s.a;
       group.add(post);
     }
 
-    // Trees on the left (cliff side)
+    // Mixed Mediterranean planting on the cliff side — cypress, pine, olive, with bougainvillea bushes between
     for (let i = 1; i < samples.length; i += 2) {
-      if (Math.random() < 0.35) continue;
+      if (Math.random() < 0.30) continue;
       const s = samples[i];
       const px = Math.cos(s.a), pz = -Math.sin(s.a);
-      const off = ROAD_HW + 3 + Math.random() * 8;
-      group.add(makeTree(s.x - px * off, s.z - pz * off));
+      const off = ROAD_HW + 3 + Math.random() * 9;
+      const x = s.x - px * off, z = s.z - pz * off;
+      const r = Math.random();
+      if (r < 0.40)      group.add(makeTree(x, z));         // cypress/pine
+      else if (r < 0.75) group.add(makeOlive(x, z));        // olive
+      else                group.add(makeBougainvillea(x, z)); // colorful bush
     }
-    // A few rocks on the cliff side too
+    // Low rocks on the cliff side
     for (let i = 0; i < 4; i++) {
       const k = Math.floor(Math.random() * samples.length);
       const s = samples[k];
@@ -428,15 +557,32 @@
       const off = ROAD_HW + 1.5 + Math.random() * 5;
       group.add(makeRock(s.x - px * off, s.z - pz * off));
     }
-    // Occasional whitewashed house higher up on the cliff
-    if (Math.random() < 0.45) {
-      const k = Math.floor(samples.length * (0.3 + Math.random() * 0.4));
+    // Whitewashed houses — 1-2 per chunk, clustered, set up the cliff a bit
+    const numHouses = Math.random() < 0.55 ? 1 : (Math.random() < 0.35 ? 2 : 0);
+    for (let n = 0; n < numHouses; n++) {
+      const k = Math.floor(samples.length * (0.25 + Math.random() * 0.5));
       const s = samples[k];
       const px = Math.cos(s.a), pz = -Math.sin(s.a);
-      const off = ROAD_HW + 9 + Math.random() * 4;
+      const off = ROAD_HW + 8 + Math.random() * 5;
       const house = makeHouse(s.x - px * off, s.z - pz * off, -s.a + (Math.random() - 0.5) * 0.5);
-      house.position.y = 2 + Math.random() * 2;
+      house.position.y = 1.5 + Math.random() * 3;
       group.add(house);
+      // A bougainvillea right beside the house — classic Amalfi look
+      if (Math.random() < 0.7) {
+        const bx = s.x - px * (off - 1.6) + (Math.random() - 0.5) * 1.5;
+        const bz = s.z - pz * (off - 1.6) + (Math.random() - 0.5) * 1.5;
+        const bush = makeBougainvillea(bx, bz);
+        bush.position.y = house.position.y - 0.2;
+        group.add(bush);
+      }
+    }
+    // Occasional small boat in the sea (sea-side)
+    if (Math.random() < 0.32) {
+      const k = Math.floor(samples.length * (0.2 + Math.random() * 0.6));
+      const s = samples[k];
+      const px = Math.cos(s.a), pz = -Math.sin(s.a);
+      const off = ROAD_HW + 25 + Math.random() * 25;
+      group.add(makeBoat(s.x + px * off, s.z + pz * off, -s.a + Math.PI / 2 + (Math.random() - 0.5) * 0.8));
     }
 
     sc.add(group);
@@ -531,11 +677,17 @@
   const bots = [];
   const LANE_OFFSET = ROAD_HW * 0.45;
 
+  // Type-specific base speeds — truck slow, taxi fast, others in between
+  const BOT_BASE_SPEED = {
+    0: [0.50, 0.62],  // taxi
+    1: [0.30, 0.40],  // truck (slow)
+    2: [0.40, 0.50],  // van
+    3: [0.46, 0.56],  // compact
+  };
   function spawnBot(typeIdx, direction, chunksAhead) {
-    // direction: +1 same as road tangent (going forward), -1 oncoming.
-    // chunksAhead: how far ahead of the player (KEEP_BEHIND) to place the bot.
     let ci = KEEP_BEHIND + chunksAhead;
     ci = Math.max(0, Math.min(chunks.length - 2, ci));
+    const [smin, smax] = BOT_BASE_SPEED[typeIdx] || [0.42, 0.55];
     const bot = {
       mesh: makeBot(typeIdx),
       typeIdx,
@@ -543,7 +695,8 @@
       sampleI: direction > 0 ? 0 : chunks[ci].samples.length - 2,
       t: direction > 0 ? 0 : 1,
       direction,
-      speed: 0.42 + Math.random() * 0.16,   // 0.42..0.58 (≈38..52 km/h on the HUD scale)
+      baseSpeed: smin + Math.random() * (smax - smin),
+      seed: Math.random() * 100,
     };
     sc.add(bot.mesh);
     bots.push(bot);
@@ -600,7 +753,11 @@
       const s0 = chunk.samples[b.sampleI];
       const s1 = chunk.samples[b.sampleI + 1];
       const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
-      b.t += (b.speed * b.direction) / segLen;
+      // slow down through corners + a small ebb/flow over time so traffic doesn't feel robotic
+      const localCurv = Math.abs(s1.a - s0.a);
+      const speedFactor = Math.max(0.55, 1 - localCurv * 6.0);
+      const moveSpeed = b.baseSpeed * speedFactor * (1 + Math.sin(performance.now() * 0.0008 + b.seed) * 0.07);
+      b.t += (moveSpeed * b.direction) / segLen;
 
       // advance sampleI when t crosses 0 or 1
       while (b.t >= 1 && b.sampleI < chunk.samples.length - 2) { b.t -= 1; b.sampleI++; }
@@ -617,6 +774,9 @@
       const laneSide = b.direction > 0 ? +1 : -1;
       b.mesh.position.set(wx + px * LANE_OFFSET * laneSide, 0.1, wz + pz * LANE_OFFSET * laneSide);
       b.mesh.rotation.y = wa + (b.direction < 0 ? Math.PI : 0);
+      // Lean into the turn — visual roll proportional to local curvature
+      const lean = -(ss1.a - ss0.a) * b.direction * 2.2;
+      b.mesh.rotation.z = Math.max(-0.10, Math.min(0.10, lean));
     }
   }
   // ----- car (same Audi A3 as the park) -----
@@ -846,6 +1006,8 @@
     if (started) { updatePhysics(); updateBots(); }
     updateCarMesh();
     updateCamera();
+    // sky + sun follow the camera position so they always sit "at infinity"
+    skyboxGroup.position.copy(cam.position);
     updateHUD();
     renderer.render(sc, cam);
   }
