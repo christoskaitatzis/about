@@ -462,6 +462,163 @@
     cx0 = ch.ex; cz0 = ch.ez; ca0 = ch.ea; prevT = t;
   }
 
+
+  // ===== Bot traffic =====
+  const BOT_TYPES = [
+    { name: 'taxi',    color: 0xf5cb31, top: 0x1a1a1a, size: [1.65, 1.45, 3.9] },
+    { name: 'truck',   color: 0xa42626, top: 0xe6dcc0, size: [2.0,  2.1,  5.4], cargo: true },
+    { name: 'van',     color: 0x3a6cc6, top: 0xf2f2f2, size: [1.9,  2.0,  4.6] },
+    { name: 'compact', color: 0x4b9c5e, top: 0x1a1a1a, size: [1.55, 1.35, 3.4] },
+  ];
+  const matWheelBot = new THREE.MeshLambertMaterial({ color: 0x111114 });
+  const wheelGeoBot = new THREE.CylinderGeometry(0.40, 0.40, 0.28, 12);
+
+  function makeBot(idx) {
+    const t = BOT_TYPES[idx];
+    const g = new THREE.Group();
+    const [w, h, d] = t.size;
+    const bodyMat = new THREE.MeshPhongMaterial({ color: t.color, shininess: 60 });
+    const topMat  = new THREE.MeshPhongMaterial({ color: t.top,   shininess: 80 });
+
+    // Lower hull
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.55, d), bodyMat);
+    lower.position.y = h * 0.55 / 2 + 0.4;
+    g.add(lower);
+
+    // Cabin (greenhouse) — for trucks it's a smaller cab over the front, for others a centered cabin
+    if (t.cargo) {
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(w * 0.95, h * 0.55, d * 0.32), bodyMat);
+      cab.position.set(0, h * 0.55 + h * 0.55 / 2 + 0.4, d * 0.32);
+      g.add(cab);
+      const cabGlass = new THREE.Mesh(new THREE.BoxGeometry(w * 0.92, h * 0.30, d * 0.30), new THREE.MeshPhongMaterial({ color: 0x0e1014, shininess: 100 }));
+      cabGlass.position.set(0, h * 0.55 + h * 0.40 + 0.4, d * 0.32);
+      g.add(cabGlass);
+      // Cargo box behind cab
+      const cargo = new THREE.Mesh(new THREE.BoxGeometry(w * 0.98, h * 0.82, d * 0.58), topMat);
+      cargo.position.set(0, h * 0.55 / 2 + h * 0.82 / 2 + 0.4, -d * 0.22);
+      g.add(cargo);
+    } else {
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, h * 0.42, d * 0.55), topMat);
+      cabin.position.set(0, h * 0.55 + h * 0.42 / 2 + 0.4, -d * 0.04);
+      g.add(cabin);
+      const cGlass = new THREE.Mesh(new THREE.BoxGeometry(w * 0.84, h * 0.30, d * 0.50), new THREE.MeshPhongMaterial({ color: 0x0e1014, shininess: 100 }));
+      cGlass.position.set(0, h * 0.55 + h * 0.30 / 2 + 0.4 + 0.04, -d * 0.04);
+      g.add(cGlass);
+    }
+
+    // Wheels
+    const wx = w / 2 + 0.04, wz = d * 0.34;
+    [[wx, wz], [-wx, wz], [wx, -wz], [-wx, -wz]].forEach(([x, z]) => {
+      const wh = new THREE.Mesh(wheelGeoBot, matWheelBot);
+      wh.rotation.z = Math.PI / 2;
+      wh.position.set(x, 0.4, z);
+      g.add(wh);
+    });
+
+    // Headlights / taillights as little glowing planes
+    const hl = new THREE.MeshBasicMaterial({ color: 0xfff2b8 });
+    const tl = new THREE.MeshBasicMaterial({ color: 0xcc2418 });
+    [-1, 1].forEach(s => {
+      const ph = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.18), hl);
+      ph.position.set(s * w * 0.35, 0.85, d / 2 + 0.01); g.add(ph);
+      const pt = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.18), tl);
+      pt.position.set(s * w * 0.35, 0.85, -d / 2 - 0.01); pt.rotation.y = Math.PI; g.add(pt);
+    });
+
+    return g;
+  }
+
+  const bots = [];
+  const LANE_OFFSET = ROAD_HW * 0.45;
+
+  function spawnBot(typeIdx, direction, chunksAhead) {
+    // direction: +1 same as road tangent (going forward), -1 oncoming.
+    // chunksAhead: how far ahead of the player (KEEP_BEHIND) to place the bot.
+    let ci = KEEP_BEHIND + chunksAhead;
+    ci = Math.max(0, Math.min(chunks.length - 2, ci));
+    const bot = {
+      mesh: makeBot(typeIdx),
+      typeIdx,
+      chunkI: ci,
+      sampleI: direction > 0 ? 0 : chunks[ci].samples.length - 2,
+      t: direction > 0 ? 0 : 1,
+      direction,
+      speed: 0.42 + Math.random() * 0.16,   // 0.42..0.58 (≈38..52 km/h on the HUD scale)
+    };
+    sc.add(bot.mesh);
+    bots.push(bot);
+  }
+  function despawnBot(i) {
+    const b = bots[i];
+    sc.remove(b.mesh);
+    b.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+    bots.splice(i, 1);
+  }
+  // initial 4 bots — mixed types and directions for a populated feel
+  spawnBot(0, +1, 4);   // taxi ahead, same direction
+  spawnBot(1, +1, -1);  // truck just behind
+  spawnBot(2, -1, 5);   // van oncoming
+  spawnBot(3, -1, 9);   // compact oncoming further ahead
+
+  function updateBots() {
+    for (let i = bots.length - 1; i >= 0; i--) {
+      const b = bots[i];
+      let chunk = chunks[b.chunkI];
+      // If the chunk this bot lives in was recycled out, drop & respawn ahead.
+      if (!chunk) {
+        const td = b.typeIdx, dir = b.direction;
+        despawnBot(i);
+        spawnBot(td, dir, dir > 0 ? 6 : 8);
+        continue;
+      }
+
+      const samples = chunk.samples;
+      if (b.sampleI < 0 || b.sampleI >= samples.length - 1) {
+        // hop to neighboring chunk based on direction
+        if (b.direction > 0) {
+          if (b.chunkI < chunks.length - 2) {
+            b.chunkI++; b.sampleI = 0; b.t = 0;
+          } else {
+            // off the front — respawn behind the player
+            const td = b.typeIdx, dir = b.direction;
+            despawnBot(i); spawnBot(td, dir, dir > 0 ? -1 : 8);
+            continue;
+          }
+        } else {
+          if (b.chunkI > 0) {
+            b.chunkI--; b.sampleI = chunks[b.chunkI].samples.length - 2; b.t = 1;
+          } else {
+            // off the back — respawn ahead
+            const td = b.typeIdx, dir = b.direction;
+            despawnBot(i); spawnBot(td, dir, dir > 0 ? 5 : 9);
+            continue;
+          }
+        }
+        chunk = chunks[b.chunkI];
+      }
+
+      const s0 = chunk.samples[b.sampleI];
+      const s1 = chunk.samples[b.sampleI + 1];
+      const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+      b.t += (b.speed * b.direction) / segLen;
+
+      // advance sampleI when t crosses 0 or 1
+      while (b.t >= 1 && b.sampleI < chunk.samples.length - 2) { b.t -= 1; b.sampleI++; }
+      while (b.t < 0  && b.sampleI > 0)                          { b.t += 1; b.sampleI--; }
+
+      const ss0 = chunk.samples[b.sampleI];
+      const ss1 = chunk.samples[b.sampleI + 1];
+      const tt = Math.max(0, Math.min(1, b.t));
+      const wx = ss0.x + (ss1.x - ss0.x) * tt;
+      const wz = ss0.z + (ss1.z - ss0.z) * tt;
+      const wa = ss0.a + (ss1.a - ss0.a) * tt;
+      // right perpendicular (same convention as the road builder)
+      const px = Math.cos(wa), pz = -Math.sin(wa);
+      const laneSide = b.direction > 0 ? +1 : -1;
+      b.mesh.position.set(wx + px * LANE_OFFSET * laneSide, 0.1, wz + pz * LANE_OFFSET * laneSide);
+      b.mesh.rotation.y = wa + (b.direction < 0 ? Math.PI : 0);
+    }
+  }
   // ----- car (same Audi A3 as the park) -----
   function makeCar() {
     const g = new THREE.Group();
@@ -628,7 +785,7 @@
 
   function updatePhysics() {
     // Cruising tuning — generous top speed, easy acceleration, soft steering
-    const accel = 0.012, maxF = 0.78, maxR = 0.30, friction = 0.038, turn = 0.030;
+    const accel = 0.018, maxF = 0.70, maxR = 0.30, friction = 0.030, turn = 0.030;
     if (keys.ArrowUp) car.speed += accel;
     if (keys.ArrowDown) car.speed -= accel;
     car.speed *= (1 - friction);
@@ -651,6 +808,8 @@
       const dropped = chunks.shift();
       disposeChunk(dropped);
       ns.chunkI -= 1;
+      // Bots' chunkI indices shift too
+      for (const b of bots) b.chunkI -= 1;
     }
     while (chunks.length < ACTIVE) {
       const last = chunks[chunks.length - 1];
@@ -684,7 +843,7 @@
 
   function loop() {
     requestAnimationFrame(loop);
-    if (started) updatePhysics();
+    if (started) { updatePhysics(); updateBots(); }
     updateCarMesh();
     updateCamera();
     updateHUD();
