@@ -152,29 +152,51 @@
   const matTrunk   = new THREE.MeshLambertMaterial({ color: 0x7a4a2c });
   const matEdge    = new THREE.MeshBasicMaterial({ color: 0xfaf6e8 });
 
-  // Asphalt — procedural noise canvas
+  // Asphalt — lighter, weathered coastal-road texture (similar to worn Irish coastal asphalt)
   const asphaltTex = (() => {
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
     const c = cv.getContext('2d');
-    c.fillStyle = '#4a4d52'; c.fillRect(0, 0, 256, 256);
+    // medium warm grey base — like sun-bleached, weathered asphalt
+    c.fillStyle = '#6a6d6a'; c.fillRect(0, 0, 256, 256);
+    // per-pixel brightness jitter (gentle, with a hint of cool/warm variation)
     const img = c.getImageData(0, 0, 256, 256);
     const d = img.data;
     for (let i = 0; i < d.length; i += 4) {
-      const n = (Math.random() - 0.5) * 28;
-      d[i]   = Math.max(0, Math.min(255, d[i]   + n));
+      const n = (Math.random() - 0.5) * 20;
+      d[i]   = Math.max(0, Math.min(255, d[i]   + n + 1));    // slightly warm
       d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
-      d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
+      d[i+2] = Math.max(0, Math.min(255, d[i+2] + n - 2));    // slightly cooler blue
     }
     c.putImageData(img, 0, 0);
-    for (let i = 0; i < 700; i++) {
+    // gravel chips — varied light specks
+    for (let i = 0; i < 600; i++) {
       const x = Math.random() * 256, y = Math.random() * 256;
-      c.fillStyle = 'rgba(' + (130 + Math.random() * 40 | 0) + ',' + (130 + Math.random() * 40 | 0) + ',' + (130 + Math.random() * 40 | 0) + ',0.55)';
-      c.beginPath(); c.arc(x, y, Math.random() * 1.2 + 0.3, 0, Math.PI * 2); c.fill();
+      const r = Math.random() * 0.95 + 0.25;
+      const b = 130 + Math.random() * 70 | 0;
+      c.fillStyle = 'rgba(' + b + ',' + b + ',' + (b - 4) + ',0.42)';
+      c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
     }
-    for (let i = 0; i < 90; i++) {
+    // tiny darker pits / cracks
+    for (let i = 0; i < 80; i++) {
       const x = Math.random() * 256, y = Math.random() * 256;
-      c.fillStyle = 'rgba(20,22,26,' + (0.12 + Math.random() * 0.25).toFixed(2) + ')';
-      c.fillRect(x, y, 1 + Math.random() * 3, 1 + Math.random() * 3);
+      c.fillStyle = 'rgba(35,38,40,' + (0.10 + Math.random() * 0.20).toFixed(2) + ')';
+      c.fillRect(x, y, 1 + Math.random() * 2.4, 1 + Math.random() * 2.4);
+    }
+    // long horizontal wear streaks — these tile along the road length and read as tire-track patina
+    for (let i = 0; i < 5; i++) {
+      const y = Math.random() * 256;
+      const h = 0.8 + Math.random() * 1.4;
+      c.fillStyle = 'rgba(48,50,52,' + (0.05 + Math.random() * 0.07).toFixed(2) + ')';
+      c.fillRect(0, y, 256, h);
+    }
+    // a couple of soft lighter washes (sun-bleached patches)
+    for (let i = 0; i < 3; i++) {
+      const x = Math.random() * 256, y = Math.random() * 256;
+      const grad = c.createRadialGradient(x, y, 0, x, y, 60 + Math.random() * 40);
+      grad.addColorStop(0, 'rgba(190,190,180,0.10)');
+      grad.addColorStop(1, 'rgba(190,190,180,0)');
+      c.fillStyle = grad;
+      c.fillRect(0, 0, 256, 256);
     }
     const tex = new THREE.CanvasTexture(cv);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
