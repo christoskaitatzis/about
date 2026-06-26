@@ -27,7 +27,8 @@
   }
   #back-link { top: 22px; left: 24px; }
   #fs-toggle  { top: 22px; right: 24px; border: 1px solid #e0e7e2; }
-  #tilt-toggle{ top: 62px; right: 24px; display: none; }
+  #music-toggle { top: 62px; right: 24px; }
+  #tilt-toggle{ top: 102px; right: 24px; display: none; }
   body.mobile #tilt-toggle { display: block; }
 
   #hud {
@@ -77,6 +78,7 @@
 
 <a id="back-link" class="pill" href="portfolio_park.html" onclick="event.preventDefault(); window.__fadeNav(this.href); return false;">← back to park</a>
 <button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
+<button id="music-toggle" class="pill" type="button">🎵 Music ON</button>
 <button id="tilt-toggle" class="pill" type="button">📱 Tilt OFF</button>
 
 <div id="hud">
@@ -868,7 +870,25 @@
   function startRun() {
     started = true;
     document.getElementById('start').style.display = 'none';
+    // Start music on user gesture (browsers require this)
+    music.play().catch(() => {});
   }
+
+  // ----- background music -----
+  const music = new Audio('powerful_rock.mp3');
+  music.loop = true;
+  music.volume = 0.5;
+  const musicBtn = document.getElementById('music-toggle');
+  musicBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (music.paused) {
+      music.play().catch(() => {});
+      musicBtn.textContent = '🎵 Music ON';
+    } else {
+      music.pause();
+      musicBtn.textContent = '🎵 Music OFF';
+    }
+  });
 
   // ----- fullscreen -----
   const fsBtn = document.getElementById('fs-toggle');
