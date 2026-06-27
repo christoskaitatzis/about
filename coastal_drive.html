@@ -293,6 +293,8 @@
   // Special, never-random type used only for the scripted suspension bridge finale.
   const TYPE_STRAIGHT = TYPES[0];
   const TYPE_BRIDGE   = { name: 'bridge', w: 0, dt: 0, s: false, bridge: true };
+  // Host chunk where the long Golden-Gate-style sea bridge branches off toward the water.
+  const TYPE_SEABRIDGE = { name: 'sea_junction', w: 0, dt: 0, s: false, seaBridge: true };
 
   const W_TOTAL = TYPES.reduce((a, t) => a + t.w, 0);
   function pickType(prev) {
@@ -310,18 +312,27 @@
   }
 
   // ----- bridge scheduling -----
-  // After driving a while, force a clean straight approach followed by the suspension
-  // bridge. Reaching the far end of the bridge sends the player back to the park.
-  const BRIDGE_AFTER = 22;       // chunks to build before the bridge is queued
-  let   chunksBuilt  = 0;
-  let   bridgeQueued = false;
-  let   bridgeReached = false;  // fires the return-to-park once
-  const forcedTypes  = [];       // overrides pickType when non-empty
+  // First a short scenic span over the water (decorative), then later a junction where a
+  // long Golden-Gate-style suspension bridge branches off toward the sea. Driving to the
+  // far END of that long bridge returns the player to the portfolio park.
+  const SMALL_BRIDGE_AFTER = 12;   // chunks before the short scenic bridge
+  const SEA_BRIDGE_AFTER   = 20;   // chunks before the sea-bridge junction appears
+  let   chunksBuilt   = 0;
+  let   smallBridgeQueued = false;
+  let   seaBridgeQueued   = false;
+  let   bridgeReached = false;     // fires the return-to-park once
+  let   seaBridge     = null;      // { samples, group, hw } once spawned
+  const forcedTypes   = [];        // overrides pickType when non-empty
   function nextType(prev) {
     if (forcedTypes.length) return forcedTypes.shift();
-    if (!bridgeQueued && chunksBuilt >= BRIDGE_AFTER) {
-      bridgeQueued = true;
-      forcedTypes.push(TYPE_STRAIGHT, TYPE_BRIDGE);   // straight run-up, then the bridge
+    if (!smallBridgeQueued && chunksBuilt >= SMALL_BRIDGE_AFTER) {
+      smallBridgeQueued = true;
+      forcedTypes.push(TYPE_STRAIGHT, TYPE_BRIDGE);   // straight run-up, then the short span
+      return forcedTypes.shift();
+    }
+    if (!seaBridgeQueued && chunksBuilt >= SEA_BRIDGE_AFTER) {
+      seaBridgeQueued = true;
+      forcedTypes.push(TYPE_STRAIGHT, TYPE_SEABRIDGE); // run-up, then the junction host
       return forcedTypes.shift();
     }
     return pickType(prev);
@@ -579,6 +590,190 @@
     }
   }
 
+  // A drivable deck surface (asphalt + white edge lines) for an arbitrary centerline.
+  function buildDeck(group, samples, HW) {
+    const n = samples.length;
+    const positions = [], indices = [], uvs = [];
+    let travelled = 0;
+    for (let i = 0; i < n; i++) {
+      const s = samples[i];
+      if (i > 0) travelled += Math.hypot(s.x - samples[i - 1].x, s.z - samples[i - 1].z);
+      const px = Math.cos(s.a), pz = -Math.sin(s.a);
+      positions.push(s.x - px * HW, 0.12, s.z - pz * HW);
+      positions.push(s.x + px * HW, 0.12, s.z + pz * HW);
+      uvs.push(travelled * 0.15, 0);
+      uvs.push(travelled * 0.15, HW * 2 * 0.15);
+    }
+    for (let i = 0; i < n - 1; i++) {
+      const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
+      indices.push(a0, a2, a1); indices.push(a1, a2, a3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setIndex(indices); geo.computeVertexNormals();
+    group.add(new THREE.Mesh(geo, matAsphalt));
+    for (const side of [-1, 1]) {
+      const ep = [], ei = [];
+      const inner = HW - 0.05, outer = HW - 0.2;
+      for (let i = 0; i < n; i++) {
+        const s = samples[i];
+        const px = Math.cos(s.a), pz = -Math.sin(s.a);
+        ep.push(s.x + side * px * inner, 0.15, s.z + side * pz * inner);
+        ep.push(s.x + side * px * outer, 0.15, s.z + side * pz * outer);
+      }
+      for (let i = 0; i < n - 1; i++) {
+        const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
+        ei.push(a0, a2, a1); ei.push(a1, a2, a3);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(ep, 3));
+      g.setIndex(ei); g.computeVertexNormals();
+      group.add(new THREE.Mesh(g, matEdge));
+    }
+  }
+
+  // A highway-green sign with painted text (rendered via a canvas texture).
+  function makeTextSign(lines) {
+    const g = new THREE.Group();
+    const W = 512, H = 256;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#1f6b46'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 14; ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 56px Arial, sans-serif';
+    lines.forEach((ln, i) => ctx.fillText(ln, W / 2, H * (0.5 + (i - (lines.length - 1) / 2) * 0.30)));
+    const tex = new THREE.CanvasTexture(c);
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(7, 3.5), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+    board.position.y = 4.6; g.add(board);
+    for (const dx of [-2.4, 2.4]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 4.8, 0.22), matSignPost);
+      post.position.set(dx, 2.4, 0); g.add(post);
+    }
+    return g;
+  }
+
+  // The long Golden-Gate-style suspension bridge that branches off toward the sea.
+  // Builds its own group (added straight to the scene so it survives chunk recycling)
+  // and records the centerline so the car can drive it and trigger the return-to-park.
+  function buildSeaBridge(hostSamples) {
+    const s = hostSamples[Math.floor(hostSamples.length * 0.5)];
+    const a = s.a;
+    const px = Math.cos(a), pz = -Math.sin(a);                // toward the sea (right)
+    const bh = a + Math.PI * 0.5 * 0.82;                      // ~74° turn off the road, seaward
+    const dirx = Math.sin(bh), dirz = Math.cos(bh);
+    const HW = ROAD_HW;
+    const LEN = 260, N = 56;
+    const startX = s.x + px * (HW - 0.2);
+    const startZ = s.z + pz * (HW - 0.2);
+    const samples = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      samples.push({ x: startX + dirx * LEN * t, z: startZ + dirz * LEN * t, a: bh });
+    }
+    const n = samples.length;
+    const group = new THREE.Group();
+
+    // Paved apron over the turn so the junction reads cleanly
+    const apron = new THREE.Mesh(new THREE.BoxGeometry(HW * 2.2, 0.05, 14), matAsphalt);
+    apron.position.set(startX + dirx * 4, 0.11, startZ + dirz * 4);
+    apron.rotation.y = bh; group.add(apron);
+
+    // Drivable deck
+    buildDeck(group, samples, HW);
+
+    // Side girders + underside slab
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < n - 1; i++) {
+        const s0 = samples[i], s1 = samples[i + 1];
+        const ppx = Math.cos(s0.a), ppz = -Math.sin(s0.a);
+        const mx = (s0.x + s1.x) / 2 + side * ppx * HW;
+        const mz = (s0.z + s1.z) / 2 + side * ppz * HW;
+        const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.9, segLen * 1.05), matBridge);
+        beam.position.set(mx, 0.0, mz); beam.rotation.y = s0.a; group.add(beam);
+      }
+    }
+    for (let i = 0; i < n - 1; i += 2) {
+      const s0 = samples[i], s1 = samples[Math.min(i + 2, n - 1)];
+      const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(HW * 2, 0.4, segLen), matBridge);
+      slab.position.set((s0.x + s1.x) / 2, -0.18, (s0.z + s1.z) / 2);
+      slab.rotation.y = s0.a; group.add(slab);
+    }
+
+    // Two tall towers dividing the span into thirds (Golden Gate proportions)
+    const TOWER_H = 34, DECK_TOP = 27;
+    const towerAt = [Math.floor(n * 0.34), Math.floor(n * 0.68)];
+    for (const ti of towerAt) {
+      const s2 = samples[ti];
+      const ppx = Math.cos(s2.a), ppz = -Math.sin(s2.a);
+      for (const side of [-1, 1]) {
+        const bx = s2.x + side * ppx * (HW + 0.4);
+        const bz = s2.z + side * ppz * (HW + 0.4);
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(1.4, TOWER_H, 1.4), matTower);
+        tower.position.set(bx, TOWER_H / 2 - 3, bz); group.add(tower);
+      }
+      // horizontal cross struts between the two legs (the GG ladder look)
+      for (const cy of [DECK_TOP - 9, DECK_TOP - 1]) {
+        const strut = new THREE.Mesh(new THREE.BoxGeometry(HW * 2 + 2.2, 0.8, 0.8), matTower);
+        strut.position.set(s2.x, cy, s2.z); strut.rotation.y = s2.a; group.add(strut);
+      }
+    }
+
+    // Main cables (catenary) + vertical hangers, both sides
+    function cableY(i) {
+      const t0 = towerAt[0], t1 = towerAt[1], END = 2.0;
+      if (i <= t0) { const u = i / t0; return END + (DECK_TOP - END) * (u * u); }
+      if (i >= t1) { const u = (n - 1 - i) / (n - 1 - t1); return END + (DECK_TOP - END) * (u * u); }
+      const u = (i - t0) / (t1 - t0);
+      return DECK_TOP - Math.sin(u * Math.PI) * 7.5;
+    }
+    for (const side of [-1, 1]) {
+      let prev = null;
+      for (let i = 0; i < n; i++) {
+        const s2 = samples[i];
+        const ppx = Math.cos(s2.a), ppz = -Math.sin(s2.a);
+        const cx = s2.x + side * ppx * HW, cz = s2.z + side * ppz * HW, cy = cableY(i);
+        if (prev) {
+          const dl = Math.hypot(cx - prev.x, cy - prev.y, cz - prev.z) || 1;
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, dl), matCable);
+          seg.position.set((cx + prev.x) / 2, (cy + prev.y) / 2, (cz + prev.z) / 2);
+          seg.lookAt(cx, cy, cz); group.add(seg);
+        }
+        if (cy > 1.6) {
+          const hh = cy - 1.0;
+          const hg = new THREE.Mesh(new THREE.BoxGeometry(0.08, hh, 0.08), matCable);
+          hg.position.set(cx, 1.0 + hh / 2, cz); group.add(hg);
+        }
+        prev = { x: cx, y: cy, z: cz };
+      }
+    }
+
+    // Railings
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < n - 1; i++) {
+        const s0 = samples[i], s1 = samples[i + 1];
+        const ppx = Math.cos(s0.a), ppz = -Math.sin(s0.a);
+        const mx = (s0.x + s1.x) / 2 + side * ppx * (HW - 0.2);
+        const mz = (s0.z + s1.z) / 2 + side * ppz * (HW - 0.2);
+        const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, segLen * 1.02), matCable);
+        rail.position.set(mx, 0.75, mz); rail.rotation.y = s0.a; group.add(rail);
+      }
+    }
+
+    // "Back to Portfolio Park" sign at the mouth, facing the approaching driver
+    const sign = makeTextSign(['\u2190 BACK TO', 'PORTFOLIO PARK']);
+    sign.position.set(startX - px * 1.0, 0, startZ - pz * 1.0);
+    sign.rotation.y = -a;
+    group.add(sign);
+
+    sc.add(group);
+    seaBridge = { samples, group, hw: HW };
+  }
+
   // Build a chunk. Returns { group, samples, sx, sz, sa, ex, ez, ea, type }.
   function buildChunk(type, sx, sz, sa) {
     const group = new THREE.Group();
@@ -741,6 +936,8 @@
     if (!type.bridge) {
     // Guardrail on the sea side — usually thin white posts, occasionally replaced
     // by a continuous low stone wall for a Mediterranean look.
+    // (Skipped on the sea-bridge host so the branch mouth stays open.)
+    if (!type.seaBridge) {
     const wallRun = Math.random() < 0.55;
     const wallStart = Math.floor(Math.random() * (samples.length - 8));
     const wallLen = 6 + Math.floor(Math.random() * 5);
@@ -753,6 +950,7 @@
       post.position.set(s.x + px * (ROAD_HW + 0.45), 0.475, s.z + pz * (ROAD_HW + 0.45));
       post.rotation.y = -s.a;
       group.add(post);
+    }
     }
 
     // Mixed Mediterranean planting on the cliff side — cypress, pine, olive, with bougainvillea bushes between
@@ -808,8 +1006,10 @@
     if (type.junction) buildJunctionSpur(group, samples);
     } // end !bridge scenery
 
-    // The suspension bridge structure
+    // The short scenic suspension span over the water
     if (type.bridge) buildBridge(group, samples);
+    // The long Golden-Gate-style bridge branching off toward the sea
+    if (type.seaBridge) buildSeaBridge(samples);
 
     sc.add(group);
     const end = samples[samples.length - 1];
@@ -1195,7 +1395,20 @@
         if (d < best) { best = d; bestChunkI = i; bestSampleI = j; }
       }
     }
-    return { dist: Math.sqrt(best), chunkI: bestChunkI, sampleI: bestSampleI };
+    // Also consider the sea bridge (so the car isn't penalised on it and we can detect its end)
+    let onBridge = false, bridgeSampleI = -1, bridgeBest = Infinity;
+    if (seaBridge) {
+      const bs = seaBridge.samples;
+      for (let j = 0; j < bs.length; j++) {
+        const p = bs[j];
+        const d = (p.x - car.x) * (p.x - car.x) + (p.z - car.z) * (p.z - car.z);
+        if (d < bridgeBest) { bridgeBest = d; bridgeSampleI = j; }
+      }
+      if (bridgeBest < best) onBridge = true;
+    }
+    const roadDist = Math.sqrt(best);
+    const brDist = Math.sqrt(bridgeBest);
+    return { dist: onBridge ? brDist : roadDist, chunkI: bestChunkI, sampleI: bestSampleI, onBridge, bridgeSampleI };
   }
 
   function updatePhysics() {
@@ -1218,14 +1431,11 @@
     const ns = nearestSampleDist();
     if (ns.dist > ROAD_HW + 0.5) car.speed *= OFF_DECAY;
 
-    // Reaching the far end of the suspension bridge returns to the portfolio park
-    if (!bridgeReached) {
-      const nc = chunks[ns.chunkI];
-      if (nc && nc.isBridge && ns.sampleI >= nc.samples.length - 4) {
-        bridgeReached = true;
-        if (window.__fadeNav) window.__fadeNav('portfolio_park.html');
-        else window.location.href = 'portfolio_park.html';
-      }
+    // Reaching the far end of the long sea bridge returns to the portfolio park
+    if (!bridgeReached && seaBridge && ns.onBridge && ns.bridgeSampleI >= seaBridge.samples.length - 3) {
+      bridgeReached = true;
+      if (window.__fadeNav) window.__fadeNav('portfolio_park.html');
+      else window.location.href = 'portfolio_park.html';
     }
 
     // Chunk recycling: if the nearest sample is in a chunk past KEEP_BEHIND, remove the head
