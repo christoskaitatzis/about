@@ -709,11 +709,15 @@
     b.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); });
     bots.splice(i, 1);
   }
-  // initial 4 bots — mixed types and directions for a populated feel
+  // initial bots — mixed types and directions, spread out for a populated feel
   spawnBot(0, +1, 4);   // taxi ahead, same direction
   spawnBot(1, +1, -1);  // truck just behind
   spawnBot(2, -1, 5);   // van oncoming
   spawnBot(3, -1, 9);   // compact oncoming further ahead
+  spawnBot(3, +1, 7);   // compact ahead, same direction
+  spawnBot(2, +1, 1);   // van just ahead
+  spawnBot(0, -1, 7);   // taxi oncoming
+  spawnBot(1, -1, 11);  // truck oncoming, far ahead
 
   function updateBots() {
     for (let i = bots.length - 1; i >= 0; i--) {
@@ -727,30 +731,9 @@
         continue;
       }
 
-      const samples = chunk.samples;
-      if (b.sampleI < 0 || b.sampleI >= samples.length - 1) {
-        // hop to neighboring chunk based on direction
-        if (b.direction > 0) {
-          if (b.chunkI < chunks.length - 2) {
-            b.chunkI++; b.sampleI = 0; b.t = 0;
-          } else {
-            // off the front — respawn behind the player
-            const td = b.typeIdx, dir = b.direction;
-            despawnBot(i); spawnBot(td, dir, dir > 0 ? -1 : 8);
-            continue;
-          }
-        } else {
-          if (b.chunkI > 0) {
-            b.chunkI--; b.sampleI = chunks[b.chunkI].samples.length - 2; b.t = 1;
-          } else {
-            // off the back — respawn ahead
-            const td = b.typeIdx, dir = b.direction;
-            despawnBot(i); spawnBot(td, dir, dir > 0 ? 5 : 9);
-            continue;
-          }
-        }
-        chunk = chunks[b.chunkI];
-      }
+      // Guard: if a respawn/recycle left sampleI out of range, clamp it.
+      if (b.sampleI < 0) b.sampleI = 0;
+      if (b.sampleI > chunk.samples.length - 2) b.sampleI = chunk.samples.length - 2;
 
       const s0 = chunk.samples[b.sampleI];
       const s1 = chunk.samples[b.sampleI + 1];
@@ -761,9 +744,36 @@
       const moveSpeed = b.baseSpeed * speedFactor * (1 + Math.sin(performance.now() * 0.0008 + b.seed) * 0.07);
       b.t += (moveSpeed * b.direction) / segLen;
 
-      // advance sampleI when t crosses 0 or 1
-      while (b.t >= 1 && b.sampleI < chunk.samples.length - 2) { b.t -= 1; b.sampleI++; }
-      while (b.t < 0  && b.sampleI > 0)                          { b.t += 1; b.sampleI--; }
+      // Advance along the polyline, crossing into neighbouring chunks as needed.
+      let respawned = false;
+      while (b.t >= 1) {
+        b.t -= 1; b.sampleI++;
+        if (b.sampleI >= chunk.samples.length - 1) {
+          // reached the end of this chunk — step into the next one
+          if (b.chunkI < chunks.length - 2) {
+            b.chunkI++; b.sampleI = 0; chunk = chunks[b.chunkI];
+          } else {
+            // ran off the front of the world — recycle behind the player
+            despawnBot(i); spawnBot(b.typeIdx, b.direction, b.direction > 0 ? -1 : 8);
+            respawned = true; break;
+          }
+        }
+      }
+      if (respawned) continue;
+      while (b.t < 0) {
+        b.t += 1; b.sampleI--;
+        if (b.sampleI < 0) {
+          // reached the start of this chunk — step into the previous one
+          if (b.chunkI > 0) {
+            b.chunkI--; chunk = chunks[b.chunkI]; b.sampleI = chunk.samples.length - 2;
+          } else {
+            // ran off the back of the world — recycle ahead of the player
+            despawnBot(i); spawnBot(b.typeIdx, b.direction, b.direction > 0 ? 5 : 9);
+            respawned = true; break;
+          }
+        }
+      }
+      if (respawned) continue;
 
       const ss0 = chunk.samples[b.sampleI];
       const ss1 = chunk.samples[b.sampleI + 1];
