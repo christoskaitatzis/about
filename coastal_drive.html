@@ -206,6 +206,11 @@
   const matDash    = new THREE.MeshBasicMaterial({ color: 0xfff0bf });
   const matBoatHull = new THREE.MeshLambertMaterial({ color: 0xf5efe4 });
   const matBoatCab  = new THREE.MeshLambertMaterial({ color: 0x4a5a6e });
+  const matBridge   = new THREE.MeshLambertMaterial({ color: 0x4a4540 });   // dark steel deck girders
+  const matTower    = new THREE.MeshPhongMaterial({ color: 0xc0392b, shininess: 30 }); // international-orange towers
+  const matCable    = new THREE.MeshLambertMaterial({ color: 0x8a2f24 });   // suspension cables
+  const matSign     = new THREE.MeshLambertMaterial({ color: 0x2f6f4f });   // green road sign
+  const matSignPost = new THREE.MeshLambertMaterial({ color: 0x9aa0a6 });
 
   // Asphalt — lighter, weathered coastal-road texture (similar to worn Irish coastal asphalt)
   const asphaltTex = (() => {
@@ -280,7 +285,15 @@
     { name: 'right_sweep',  w: 1, dt: -0.58, s: false },
     { name: 'left_s',       w: 1, dt: 0,     s: [ 0.38, -0.38] },
     { name: 'right_s',      w: 1, dt: 0,     s: [-0.38,  0.38] },
+    // "another path" — a chicane that wiggles left-then-right and comes out straight
+    { name: 'chicane',      w: 1, dt: 0,     s: false, profile: (i, n) => Math.sin((i / n) * Math.PI * 2) * 0.06 },
+    // "a conjunction" — a straight stretch with a side road branching off into the hills
+    { name: 'junction',     w: 1, dt: 0,     s: false, junction: true },
   ];
+  // Special, never-random type used only for the scripted suspension bridge finale.
+  const TYPE_STRAIGHT = TYPES[0];
+  const TYPE_BRIDGE   = { name: 'bridge', w: 0, dt: 0, s: false, bridge: true };
+
   const W_TOTAL = TYPES.reduce((a, t) => a + t.w, 0);
   function pickType(prev) {
     // Avoid back-to-back hard turns in the same direction (helps the flow feel natural)
@@ -288,10 +301,30 @@
       let r = Math.random() * W_TOTAL;
       for (const t of TYPES) { r -= t.w; if (r <= 0) {
         if (prev && Math.sign(t.dt) === Math.sign(prev.dt) && Math.abs(t.dt) > 0.5 && Math.abs(prev.dt) > 0.5) continue;
+        // don't place two junctions back to back
+        if (t.junction && prev && prev.junction) continue;
         return t;
       } }
     }
     return TYPES[0];
+  }
+
+  // ----- bridge scheduling -----
+  // After driving a while, force a clean straight approach followed by the suspension
+  // bridge. Reaching the far end of the bridge sends the player back to the park.
+  const BRIDGE_AFTER = 22;       // chunks to build before the bridge is queued
+  let   chunksBuilt  = 0;
+  let   bridgeQueued = false;
+  let   bridgeReached = false;  // fires the return-to-park once
+  const forcedTypes  = [];       // overrides pickType when non-empty
+  function nextType(prev) {
+    if (forcedTypes.length) return forcedTypes.shift();
+    if (!bridgeQueued && chunksBuilt >= BRIDGE_AFTER) {
+      bridgeQueued = true;
+      forcedTypes.push(TYPE_STRAIGHT, TYPE_BRIDGE);   // straight run-up, then the bridge
+      return forcedTypes.shift();
+    }
+    return pickType(prev);
   }
 
   // Builders
@@ -394,6 +427,158 @@
     return g;
   }
 
+  // Side road that branches off the cliff side at a junction chunk.
+  function buildJunctionSpur(group, samples) {
+    const mid = Math.floor(samples.length * 0.5);
+    const s = samples[mid];
+    const fx = Math.sin(s.a), fz = Math.cos(s.a);   // road-forward direction
+    const px = Math.cos(s.a), pz = -Math.sin(s.a);  // right perpendicular
+    const dx = -px, dz = -pz;                        // spur heads inland (left)
+    const SPUR_LEN = 13, SPUR_HW = 3.0;
+    const sx0 = s.x - px * (ROAD_HW - 0.3);
+    const sz0 = s.z - pz * (ROAD_HW - 0.3);
+
+    // paved strip (width axis = road-forward)
+    const pos = [], idx = [];
+    const steps = 5;
+    for (let i = 0; i <= steps; i++) {
+      const tt = i / steps;
+      const cxp = sx0 + dx * SPUR_LEN * tt;
+      const czp = sz0 + dz * SPUR_LEN * tt;
+      pos.push(cxp - fx * SPUR_HW, 0.115, czp - fz * SPUR_HW);
+      pos.push(cxp + fx * SPUR_HW, 0.115, czp + fz * SPUR_HW);
+    }
+    for (let i = 0; i < steps; i++) {
+      const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
+      idx.push(a0, a2, a1); idx.push(a1, a2, a3);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    group.add(new THREE.Mesh(g, matAsphalt));
+
+    // dashed centre line down the spur
+    const dashRotY = Math.atan2(dx, dz);
+    for (let i = 0; i < steps; i++) {
+      const tt = (i + 0.5) / steps;
+      const cxp = sx0 + dx * SPUR_LEN * tt;
+      const czp = sz0 + dz * SPUR_LEN * tt;
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, (SPUR_LEN / steps) * 0.5), matDash);
+      dash.position.set(cxp, 0.14, czp);
+      dash.rotation.y = dashRotY;
+      group.add(dash);
+    }
+
+    // green junction sign on a post beside the main road
+    const spX = s.x - px * (ROAD_HW + 0.9);
+    const spZ = s.z - pz * (ROAD_HW + 0.9);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.0, 0.14), matSignPost);
+    post.position.set(spX, 1.5, spZ);
+    group.add(post);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.12), matSign);
+    board.position.set(spX, 2.7, spZ);
+    board.rotation.y = -s.a;
+    group.add(board);
+  }
+
+  // Suspension bridge structure laid over the road surface of a bridge chunk.
+  function buildBridge(group, samples) {
+    const n = samples.length;
+
+    // Deck side girders + a thin underside slab so you don't see through to the sea
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < n - 1; i++) {
+        const s0 = samples[i], s1 = samples[i + 1];
+        const px = Math.cos(s0.a), pz = -Math.sin(s0.a);
+        const mx = (s0.x + s1.x) / 2 + side * px * ROAD_HW;
+        const mz = (s0.z + s1.z) / 2 + side * pz * ROAD_HW;
+        const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, segLen * 1.05), matBridge);
+        beam.position.set(mx, 0.0, mz);
+        beam.rotation.y = s0.a;
+        group.add(beam);
+      }
+    }
+    for (let i = 0; i < n - 1; i += 2) {
+      const s0 = samples[i], s1 = samples[Math.min(i + 2, n - 1)];
+      const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(ROAD_HW * 2, 0.4, segLen), matBridge);
+      slab.position.set((s0.x + s1.x) / 2, -0.15, (s0.z + s1.z) / 2);
+      slab.rotation.y = s0.a;
+      group.add(slab);
+    }
+
+    const TOWER_H = 17, DECK_TOP = 13;        // cable height at the towers
+    const towerAt = [Math.floor(n * 0.28), Math.floor(n * 0.72)];
+
+    // Towers (two portals) + connecting cross-beams over the road
+    for (const ti of towerAt) {
+      const s = samples[ti];
+      const px = Math.cos(s.a), pz = -Math.sin(s.a);
+      for (const side of [-1, 1]) {
+        const bx = s.x + side * px * (ROAD_HW + 0.3);
+        const bz = s.z + side * pz * (ROAD_HW + 0.3);
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(1.0, TOWER_H, 1.0), matTower);
+        tower.position.set(bx, TOWER_H / 2 - 2.5, bz);   // base dips below the deck
+        group.add(tower);
+      }
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(ROAD_HW * 2 + 2.0, 0.8, 0.8), matTower);
+      cross.position.set(s.x, TOWER_H - 2.5, s.z);
+      cross.rotation.y = s.a;
+      group.add(cross);
+    }
+
+    // Cable height profile: rises to the towers, sags at the ends and mid-span
+    function cableY(i) {
+      const t0 = towerAt[0], t1 = towerAt[1], END = 1.6;
+      if (i <= t0) { const u = i / t0; return END + (DECK_TOP - END) * (u * u); }
+      if (i >= t1) { const u = (n - 1 - i) / (n - 1 - t1); return END + (DECK_TOP - END) * (u * u); }
+      const u = (i - t0) / (t1 - t0);
+      return DECK_TOP - Math.sin(u * Math.PI) * 4.5;
+    }
+
+    // Main cables (segment boxes) + vertical hangers on both sides
+    for (const side of [-1, 1]) {
+      let prev = null;
+      for (let i = 0; i < n; i++) {
+        const s = samples[i];
+        const px = Math.cos(s.a), pz = -Math.sin(s.a);
+        const cx = s.x + side * px * ROAD_HW;
+        const cz = s.z + side * pz * ROAD_HW;
+        const cy = cableY(i);
+        if (prev) {
+          const dlen = Math.hypot(cx - prev.x, cy - prev.y, cz - prev.z) || 1;
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, dlen), matCable);
+          seg.position.set((cx + prev.x) / 2, (cy + prev.y) / 2, (cz + prev.z) / 2);
+          seg.lookAt(cx, cy, cz);
+          group.add(seg);
+        }
+        if (cy > 1.3) {
+          const hangH = cy - 1.0;
+          const hang = new THREE.Mesh(new THREE.BoxGeometry(0.06, hangH, 0.06), matCable);
+          hang.position.set(cx, 1.0 + hangH / 2, cz);
+          group.add(hang);
+        }
+        prev = { x: cx, y: cy, z: cz };
+      }
+    }
+
+    // Solid low railings along both deck edges
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < n - 1; i++) {
+        const s0 = samples[i], s1 = samples[i + 1];
+        const px = Math.cos(s0.a), pz = -Math.sin(s0.a);
+        const mx = (s0.x + s1.x) / 2 + side * px * (ROAD_HW - 0.2);
+        const mz = (s0.z + s1.z) / 2 + side * pz * (ROAD_HW - 0.2);
+        const segLen = Math.hypot(s1.x - s0.x, s1.z - s0.z) || 1;
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, segLen * 1.02), matCable);
+        rail.position.set(mx, 0.7, mz);
+        rail.rotation.y = s0.a;
+        group.add(rail);
+      }
+    }
+  }
+
   // Build a chunk. Returns { group, samples, sx, sz, sa, ex, ez, ea, type }.
   function buildChunk(type, sx, sz, sa) {
     const group = new THREE.Group();
@@ -405,7 +590,9 @@
     const stepLen = CHUNK_LEN / SAMPLES;
     for (let i = 0; i < SAMPLES; i++) {
       let dt;
-      if (type.s) {
+      if (type.profile) {
+        dt = type.profile(i, SAMPLES);
+      } else if (type.s) {
         const t = i / SAMPLES;
         dt = (t < 0.5 ? type.s[0] : type.s[1]) / (SAMPLES / 2);
       } else {
@@ -444,51 +631,78 @@
     roadGeo.computeVertexNormals();
     group.add(new THREE.Mesh(roadGeo, matAsphalt));
 
-    // Cliff strip on the left side — rises up from road edge outward
-    const cliffPos = [];
-    const cliffIdx = [];
-    const CLIFF_NEAR = ROAD_HW + 1;
-    const CLIFF_FAR  = ROAD_HW + 22;
-    for (let i = 0; i < samples.length; i++) {
-      const s = samples[i];
-      const px = Math.cos(s.a), pz = -Math.sin(s.a);
-      // jagged height — deterministic per chunk
-      const h = 6 + Math.sin(i * 0.8 + sx * 0.1) * 2 + Math.cos(i * 0.3) * 1.5;
-      cliffPos.push(s.x - px * CLIFF_NEAR, 0.10, s.z - pz * CLIFF_NEAR);
-      cliffPos.push(s.x - px * CLIFF_FAR,  h,    s.z - pz * CLIFF_FAR);
+    // Cliff strip on the left side — rises up from road edge outward.
+    // (Skipped on the bridge; pushed back on a junction to make room for the side road.)
+    if (!type.bridge) {
+      const cliffPos = [];
+      const cliffIdx = [];
+      const CLIFF_NEAR = ROAD_HW + (type.junction ? 16 : 1);
+      const CLIFF_FAR  = ROAD_HW + (type.junction ? 30 : 22);
+      for (let i = 0; i < samples.length; i++) {
+        const s = samples[i];
+        const px = Math.cos(s.a), pz = -Math.sin(s.a);
+        // jagged height — deterministic per chunk
+        const h = 6 + Math.sin(i * 0.8 + sx * 0.1) * 2 + Math.cos(i * 0.3) * 1.5;
+        cliffPos.push(s.x - px * CLIFF_NEAR, 0.10, s.z - pz * CLIFF_NEAR);
+        cliffPos.push(s.x - px * CLIFF_FAR,  h,    s.z - pz * CLIFF_FAR);
+      }
+      for (let i = 0; i < samples.length - 1; i++) {
+        const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
+        cliffIdx.push(a0, a1, a2);
+        cliffIdx.push(a1, a3, a2);
+      }
+      const cliffGeo = new THREE.BufferGeometry();
+      cliffGeo.setAttribute('position', new THREE.Float32BufferAttribute(cliffPos, 3));
+      cliffGeo.setIndex(cliffIdx);
+      cliffGeo.computeVertexNormals();
+      group.add(new THREE.Mesh(cliffGeo, matCliff));
+
+      // Junction: a flat green apron between the road and the recessed cliff
+      if (type.junction) {
+        const apron = [];
+        const apIdx = [];
+        const AP_NEAR = ROAD_HW;
+        const AP_FAR  = ROAD_HW + 16;
+        for (let i = 0; i < samples.length; i++) {
+          const s = samples[i];
+          const px = Math.cos(s.a), pz = -Math.sin(s.a);
+          apron.push(s.x - px * AP_NEAR, 0.06, s.z - pz * AP_NEAR);
+          apron.push(s.x - px * AP_FAR,  0.06, s.z - pz * AP_FAR);
+        }
+        for (let i = 0; i < samples.length - 1; i++) {
+          const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
+          apIdx.push(a0, a1, a2); apIdx.push(a1, a3, a2);
+        }
+        const apGeo = new THREE.BufferGeometry();
+        apGeo.setAttribute('position', new THREE.Float32BufferAttribute(apron, 3));
+        apGeo.setIndex(apIdx); apGeo.computeVertexNormals();
+        group.add(new THREE.Mesh(apGeo, matGreen));
+      }
     }
-    for (let i = 0; i < samples.length - 1; i++) {
-      const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
-      cliffIdx.push(a0, a1, a2);
-      cliffIdx.push(a1, a3, a2);
-    }
-    const cliffGeo = new THREE.BufferGeometry();
-    cliffGeo.setAttribute('position', new THREE.Float32BufferAttribute(cliffPos, 3));
-    cliffGeo.setIndex(cliffIdx);
-    cliffGeo.computeVertexNormals();
-    group.add(new THREE.Mesh(cliffGeo, matCliff));
 
     // Beach / shoulder strip on the right — narrow strip at sea level (creates the "cliff edge to sea" feel)
-    const beachPos = [];
-    const beachIdx = [];
-    const BEACH_NEAR = ROAD_HW + 0.6;
-    const BEACH_FAR  = ROAD_HW + 30;
-    for (let i = 0; i < samples.length; i++) {
-      const s = samples[i];
-      const px = Math.cos(s.a), pz = -Math.sin(s.a);
-      beachPos.push(s.x + px * BEACH_NEAR, 0.05, s.z + pz * BEACH_NEAR);
-      beachPos.push(s.x + px * BEACH_FAR, -0.4, s.z + pz * BEACH_FAR);
+    if (!type.bridge) {
+      const beachPos = [];
+      const beachIdx = [];
+      const BEACH_NEAR = ROAD_HW + 0.6;
+      const BEACH_FAR  = ROAD_HW + 30;
+      for (let i = 0; i < samples.length; i++) {
+        const s = samples[i];
+        const px = Math.cos(s.a), pz = -Math.sin(s.a);
+        beachPos.push(s.x + px * BEACH_NEAR, 0.05, s.z + pz * BEACH_NEAR);
+        beachPos.push(s.x + px * BEACH_FAR, -0.4, s.z + pz * BEACH_FAR);
+      }
+      for (let i = 0; i < samples.length - 1; i++) {
+        const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
+        beachIdx.push(a0, a2, a1);
+        beachIdx.push(a1, a2, a3);
+      }
+      const beachGeo = new THREE.BufferGeometry();
+      beachGeo.setAttribute('position', new THREE.Float32BufferAttribute(beachPos, 3));
+      beachGeo.setIndex(beachIdx);
+      beachGeo.computeVertexNormals();
+      group.add(new THREE.Mesh(beachGeo, matBeach));
     }
-    for (let i = 0; i < samples.length - 1; i++) {
-      const a0 = 2 * i, a1 = 2 * i + 1, a2 = 2 * (i + 1), a3 = 2 * (i + 1) + 1;
-      beachIdx.push(a0, a2, a1);
-      beachIdx.push(a1, a2, a3);
-    }
-    const beachGeo = new THREE.BufferGeometry();
-    beachGeo.setAttribute('position', new THREE.Float32BufferAttribute(beachPos, 3));
-    beachGeo.setIndex(beachIdx);
-    beachGeo.computeVertexNormals();
-    group.add(new THREE.Mesh(beachGeo, matBeach));
 
     // White edge lines along both sides of the road
     function makeEdgeLine(side) {
@@ -523,6 +737,8 @@
       group.add(dash);
     }
 
+    // Roadside scenery — skipped entirely on the bridge (it spans open water).
+    if (!type.bridge) {
     // Guardrail on the sea side — usually thin white posts, occasionally replaced
     // by a continuous low stone wall for a Mediterranean look.
     const wallRun = Math.random() < 0.55;
@@ -560,7 +776,8 @@
       group.add(makeRock(s.x - px * off, s.z - pz * off));
     }
     // Whitewashed houses — 1-2 per chunk, clustered, set up the cliff a bit
-    const numHouses = Math.random() < 0.55 ? 1 : (Math.random() < 0.35 ? 2 : 0);
+    // (skipped on junctions, where the cliff is recessed for the side road)
+    const numHouses = type.junction ? 0 : (Math.random() < 0.55 ? 1 : (Math.random() < 0.35 ? 2 : 0));
     for (let n = 0; n < numHouses; n++) {
       const k = Math.floor(samples.length * (0.25 + Math.random() * 0.5));
       const s = samples[k];
@@ -587,9 +804,16 @@
       group.add(makeBoat(s.x + px * off, s.z + pz * off, -s.a + Math.PI / 2 + (Math.random() - 0.5) * 0.8));
     }
 
+    // The side road for a junction chunk
+    if (type.junction) buildJunctionSpur(group, samples);
+    } // end !bridge scenery
+
+    // The suspension bridge structure
+    if (type.bridge) buildBridge(group, samples);
+
     sc.add(group);
     const end = samples[samples.length - 1];
-    return { group, samples, sx, sz, sa, ex: end.x, ez: end.z, ea: end.a, type };
+    return { group, samples, sx, sz, sa, ex: end.x, ez: end.z, ea: end.a, type, isBridge: !!type.bridge };
   }
 
   // Geometry disposal (materials are shared, never disposed)
@@ -604,9 +828,10 @@
   let cx0 = 0, cz0 = 0, ca0 = 0;
   let prevT = TYPES[0];
   for (let i = 0; i < ACTIVE; i++) {
-    const t = i < 2 ? TYPES[0] : pickType(prevT);
+    const t = i < 2 ? TYPES[0] : nextType(prevT);
     const ch = buildChunk(t, cx0, cz0, ca0);
     chunks.push(ch);
+    chunksBuilt++;
     cx0 = ch.ex; cz0 = ch.ez; ca0 = ch.ea; prevT = t;
   }
 
@@ -993,6 +1218,16 @@
     const ns = nearestSampleDist();
     if (ns.dist > ROAD_HW + 0.5) car.speed *= OFF_DECAY;
 
+    // Reaching the far end of the suspension bridge returns to the portfolio park
+    if (!bridgeReached) {
+      const nc = chunks[ns.chunkI];
+      if (nc && nc.isBridge && ns.sampleI >= nc.samples.length - 4) {
+        bridgeReached = true;
+        if (window.__fadeNav) window.__fadeNav('portfolio_park.html');
+        else window.location.href = 'portfolio_park.html';
+      }
+    }
+
     // Chunk recycling: if the nearest sample is in a chunk past KEEP_BEHIND, remove the head
     while (ns.chunkI > KEEP_BEHIND) {
       const dropped = chunks.shift();
@@ -1004,8 +1239,9 @@
     while (chunks.length < ACTIVE) {
       const last = chunks[chunks.length - 1];
       const prevType = last.type;
-      const t = pickType(prevType);
+      const t = nextType(prevType);
       chunks.push(buildChunk(t, last.ex, last.ez, last.ea));
+      chunksBuilt++;
     }
   }
 
