@@ -112,6 +112,13 @@
   if (_pf) requestAnimationFrame(() => requestAnimationFrame(() => { _pf.style.opacity = '0'; }));
   window.__fadeNav = function (u) { if (_pf) { _pf.style.pointerEvents = 'auto'; _pf.style.opacity = '1'; setTimeout(() => { window.location.href = u; }, 560); } else { window.location.href = u; } };
 
+  // ----- park round-trip -----
+  // If we arrived by driving through the park's portal, ?ret carries the player's
+  // park position. We hand it straight back so the park resumes where they left.
+  const RESUME_RET = new URLSearchParams(window.location.search).get('ret');
+  const PARK_BACK = RESUME_RET ? ('portfolio_park.html?resume=' + encodeURIComponent(RESUME_RET)) : 'portfolio_park.html';
+  { const bl = document.getElementById('back-link'); if (bl) bl.setAttribute('href', PARK_BACK); }
+
   // ----- mobile flag -----
   const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   if (isMobile) document.body.classList.add('mobile');
@@ -295,6 +302,8 @@
   const TYPE_BRIDGE   = { name: 'bridge', w: 0, dt: 0, s: false, bridge: true };
   // Host chunk where the long Golden-Gate-style sea bridge branches off toward the water.
   const TYPE_SEABRIDGE = { name: 'sea_junction', w: 0, dt: 0, s: false, seaBridge: true };
+  // Host chunk where a road branches inland into a drivable suburban neighbourhood.
+  const TYPE_SUBURB    = { name: 'suburb_junction', w: 0, dt: 0, s: false, junction: true, suburb: true };
 
   const W_TOTAL = TYPES.reduce((a, t) => a + t.w, 0);
   function pickType(prev) {
@@ -316,18 +325,26 @@
   // long Golden-Gate-style suspension bridge branches off toward the sea. Driving to the
   // far END of that long bridge returns the player to the portfolio park.
   const SMALL_BRIDGE_AFTER = 12;   // chunks before the short scenic bridge
-  const SEA_BRIDGE_AFTER   = 20;   // chunks before the sea-bridge junction appears
+  const SUBURB_AFTER       = 16;   // chunks before the inland suburb turn-off appears
+  const SEA_BRIDGE_AFTER   = 24;   // chunks before the sea-bridge junction appears
   let   chunksBuilt   = 0;
   let   smallBridgeQueued = false;
+  let   suburbQueued      = false;
   let   seaBridgeQueued   = false;
   let   bridgeReached = false;     // fires the return-to-park once
   let   seaBridge     = null;      // { samples, group, hw } once spawned
+  let   suburb        = null;      // { samples, group } once spawned
   const forcedTypes   = [];        // overrides pickType when non-empty
   function nextType(prev) {
     if (forcedTypes.length) return forcedTypes.shift();
     if (!smallBridgeQueued && chunksBuilt >= SMALL_BRIDGE_AFTER) {
       smallBridgeQueued = true;
       forcedTypes.push(TYPE_STRAIGHT, TYPE_BRIDGE);   // straight run-up, then the short span
+      return forcedTypes.shift();
+    }
+    if (!suburbQueued && chunksBuilt >= SUBURB_AFTER) {
+      suburbQueued = true;
+      forcedTypes.push(TYPE_STRAIGHT, TYPE_SUBURB);   // run-up, then the inland turn-off
       return forcedTypes.shift();
     }
     if (!seaBridgeQueued && chunksBuilt >= SEA_BRIDGE_AFTER) {
@@ -774,6 +791,118 @@
     seaBridge = { samples, group, hw: HW };
   }
 
+  // A drivable suburban neighbourhood that branches inland from a junction host.
+  // A connector road leads to a main street with a few cul-de-sacs lined with houses.
+  // Like the sea bridge, it lives in its own group (survives chunk recycling) and its
+  // street centrelines are recorded so the car can drive the whole thing freely.
+  function buildSuburb(hostSamples) {
+    const s = hostSamples[Math.floor(hostSamples.length * 0.5)];
+    const fx = Math.sin(s.a), fz = Math.cos(s.a);     // along the coast road
+    const px = Math.cos(s.a), pz = -Math.sin(s.a);    // right (sea); -p is inland (left)
+    const inx = -px, inz = -pz;                        // inland unit vector
+    const group = new THREE.Group();
+    const streets = [];                                // each: array of {x,z,a}
+    const allSamples = [];
+
+    // helper: a straight street between two points, returns its centreline samples
+    function street(x0, z0, x1, z1, hw) {
+      const dx = x1 - x0, dz = z1 - z0;
+      const len = Math.hypot(dx, dz) || 1;
+      const a = Math.atan2(dx, dz);
+      const n = Math.max(2, Math.round(len / 4));
+      const samples = [];
+      for (let i = 0; i <= n; i++) { const t = i / n; samples.push({ x: x0 + dx * t, z: z0 + dz * t, a }); }
+      buildDeck(group, samples, hw);
+      streets.push(samples);
+      for (const sm of samples) allSamples.push(sm);
+      return samples;
+    }
+
+    // mouth at the road's inland edge
+    const m0x = s.x + inx * (ROAD_HW - 0.3), m0z = s.z + inz * (ROAD_HW - 0.3);
+
+    // ground first (under everything), a big green pad over the whole neighbourhood
+    const gcx = m0x + inx * 50, gcz = m0z + inz * 50;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(140, 120), matGreen);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(gcx, 0.04, gcz);
+    group.add(ground);
+
+    // 1) connector road inland
+    const CONN = 30, HWc = 3.4;
+    const c1x = m0x + inx * CONN, c1z = m0z + inz * CONN;
+    street(m0x, m0z, c1x, c1z, HWc);
+
+    // 2) main street, running along the coast-road axis, centred at the connector end
+    const HALF = 40, HWm = 3.8;
+    const maX0 = c1x - fx * HALF, maZ0 = c1z - fz * HALF;
+    const maX1 = c1x + fx * HALF, maZ1 = c1z + fz * HALF;
+    street(maX0, maZ0, maX1, maZ1, HWm);
+
+    // 3) three cul-de-sac branches reaching deeper inland off the main street
+    const CUL = 26, HWb = 3.2, R_CUL = 6;
+    const branchOff = [-26, 0, 26];
+    const culEnds = [];
+    for (const off of branchOff) {
+      const bx0 = c1x + fx * off, bz0 = c1z + fz * off;
+      const bx1 = bx0 + inx * CUL, bz1 = bz0 + inz * CUL;
+      street(bx0, bz0, bx1, bz1, HWb);
+      culEnds.push({ x: bx1, z: bz1 });
+      // round cul-de-sac head
+      const head = new THREE.Mesh(new THREE.CircleGeometry(R_CUL, 20), matAsphalt);
+      head.rotation.x = -Math.PI / 2; head.position.set(bx1, 0.12, bz1);
+      group.add(head);
+      allSamples.push({ x: bx1, z: bz1, a: s.a }); // count the head as drivable too
+    }
+
+    // 4) houses lining the streets (set back from each side, facing the road)
+    function lineHouses(samples, hw, density) {
+      const n = samples.length;
+      for (let i = 1; i < n - 1; i++) {
+        const sm = samples[i];
+        const ppx = Math.cos(sm.a), ppz = -Math.sin(sm.a);
+        for (const side of [-1, 1]) {
+          if (Math.random() > density) continue;
+          const off = hw + 4.5 + Math.random() * 2;
+          const hx = sm.x + side * ppx * off, hz = sm.z + side * ppz * off;
+          const house = makeHouse(hx, hz, -sm.a + (side < 0 ? Math.PI : 0) + (Math.random() - 0.5) * 0.2);
+          group.add(house);
+          if (Math.random() < 0.5) group.add(makeTree(hx + side * ppx * 2.4, hz + side * ppz * 2.4));
+        }
+      }
+    }
+    lineHouses(streets[1], HWm, 0.5);     // main street
+    lineHouses(streets[2], HWb, 0.7);     // cul-de-sac 1
+    lineHouses(streets[3], HWb, 0.7);     // cul-de-sac 2
+    lineHouses(streets[4], HWb, 0.7);     // cul-de-sac 3
+    // a couple of houses around each cul-de-sac head
+    for (const e of culEnds) {
+      for (const ang of [0, 2.1, 4.2]) {
+        if (Math.random() < 0.35) continue;
+        const hx = e.x + Math.sin(ang + s.a) * (R_CUL + 4), hz = e.z + Math.cos(ang + s.a) * (R_CUL + 4);
+        group.add(makeHouse(hx, hz, -(ang + s.a) + Math.PI));
+      }
+    }
+    // scattered trees on the green between streets
+    for (let i = 0; i < 22; i++) {
+      const along = (Math.random() - 0.5) * 90, deep = 6 + Math.random() * 78;
+      const tx = c1x + fx * along + inx * (deep - CONN), tz = c1z + fz * along + inz * (deep - CONN);
+      // keep trees off the roads
+      let near = false;
+      for (const sm of allSamples) { if (Math.hypot(sm.x - tx, sm.z - tz) < 6) { near = true; break; } }
+      if (!near) group.add(makeTree(tx, tz));
+    }
+
+    // welcome sign at the mouth, facing the approaching driver
+    const sign = makeTextSign(['\u2191 SEABROOK', 'HEIGHTS']);
+    sign.position.set(s.x + inx * (ROAD_HW + 1.2), 0, s.z + inz * (ROAD_HW + 1.2));
+    sign.rotation.y = -s.a;
+    group.add(sign);
+
+    sc.add(group);
+    suburb = { samples: allSamples, group };
+  }
+
   // Build a chunk. Returns { group, samples, sx, sz, sa, ex, ez, ea, type }.
   function buildChunk(type, sx, sz, sa) {
     const group = new THREE.Group();
@@ -827,8 +956,8 @@
     group.add(new THREE.Mesh(roadGeo, matAsphalt));
 
     // Cliff strip on the left side — rises up from road edge outward.
-    // (Skipped on the bridge; pushed back on a junction to make room for the side road.)
-    if (!type.bridge) {
+    // (Skipped on the bridge and the suburb; pushed back on a junction for the side road.)
+    if (!type.bridge && !type.suburb) {
       const cliffPos = [];
       const cliffIdx = [];
       const CLIFF_NEAR = ROAD_HW + (type.junction ? 16 : 1);
@@ -954,7 +1083,8 @@
     }
 
     // Mixed Mediterranean planting on the cliff side — cypress, pine, olive, with bougainvillea bushes between
-    for (let i = 1; i < samples.length; i += 2) {
+    // (skipped on the suburb host, where the connector road occupies the inland edge)
+    for (let i = 1; i < samples.length && !type.suburb; i += 2) {
       if (Math.random() < 0.30) continue;
       const s = samples[i];
       const px = Math.cos(s.a), pz = -Math.sin(s.a);
@@ -966,7 +1096,7 @@
       else                group.add(makeBougainvillea(x, z)); // colorful bush
     }
     // Low rocks on the cliff side
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4 && !type.suburb; i++) {
       const k = Math.floor(Math.random() * samples.length);
       const s = samples[k];
       const px = Math.cos(s.a), pz = -Math.sin(s.a);
@@ -1002,8 +1132,10 @@
       group.add(makeBoat(s.x + px * off, s.z + pz * off, -s.a + Math.PI / 2 + (Math.random() - 0.5) * 0.8));
     }
 
-    // The side road for a junction chunk
-    if (type.junction) buildJunctionSpur(group, samples);
+    // The side road for a junction chunk — a full neighbourhood on the suburb host,
+    // otherwise the short decorative spur.
+    if (type.suburb) buildSuburb(samples);
+    else if (type.junction) buildJunctionSpur(group, samples);
     } // end !bridge scenery
 
     // The short scenic suspension span over the water
@@ -1325,6 +1457,15 @@
     }
   });
 
+  // Seamless entry: if we drove in from the park, skip the splash and start at once.
+  // Audio can't autoplay without a user gesture, so it kicks in on the first key/tap.
+  if (RESUME_RET) {
+    startRun();
+    const _resumeAudio = () => { music.play().catch(() => {}); window.removeEventListener('keydown', _resumeAudio); window.removeEventListener('pointerdown', _resumeAudio); };
+    window.addEventListener('keydown', _resumeAudio);
+    window.addEventListener('pointerdown', _resumeAudio);
+  }
+
   // ----- fullscreen -----
   const fsBtn = document.getElementById('fs-toggle');
   fsBtn.addEventListener('click', (e) => {
@@ -1406,9 +1547,24 @@
       }
       if (bridgeBest < best) onBridge = true;
     }
+    // Also consider the suburb streets (drivable, no off-road penalty there)
+    let subBest = Infinity;
+    if (suburb) {
+      const ss = suburb.samples;
+      for (let j = 0; j < ss.length; j++) {
+        const p = ss[j];
+        const d = (p.x - car.x) * (p.x - car.x) + (p.z - car.z) * (p.z - car.z);
+        if (d < subBest) subBest = d;
+      }
+    }
     const roadDist = Math.sqrt(best);
     const brDist = Math.sqrt(bridgeBest);
-    return { dist: onBridge ? brDist : roadDist, chunkI: bestChunkI, sampleI: bestSampleI, onBridge, bridgeSampleI };
+    const subDist = Math.sqrt(subBest);
+    // nearest drivable surface overall (used for the off-road penalty)
+    const dist = Math.min(roadDist, brDist, subDist);
+    // only count as "on the bridge" when the bridge is the nearest drivable surface
+    if (onBridge && !(brDist <= roadDist && brDist <= subDist)) onBridge = false;
+    return { dist, chunkI: bestChunkI, sampleI: bestSampleI, onBridge, bridgeSampleI };
   }
 
   function updatePhysics() {
@@ -1434,8 +1590,8 @@
     // Reaching the far end of the long sea bridge returns to the portfolio park
     if (!bridgeReached && seaBridge && ns.onBridge && ns.bridgeSampleI >= seaBridge.samples.length - 3) {
       bridgeReached = true;
-      if (window.__fadeNav) window.__fadeNav('portfolio_park.html');
-      else window.location.href = 'portfolio_park.html';
+      if (window.__fadeNav) window.__fadeNav(PARK_BACK);
+      else window.location.href = PARK_BACK;
     }
 
     // Chunk recycling: if the nearest sample is in a chunk past KEEP_BEHIND, remove the head
