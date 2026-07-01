@@ -1770,7 +1770,10 @@
 
   function updatePhysics() {
     // Cruising tuning — generous top speed, easy acceleration, soft steering
-    const accel = 0.018, maxF = 0.70, maxR = 0.30, friction = 0.030, turn = 0.030;
+    // Performance depends on the chosen car — the Ferrari is quicker off the line
+    // and has a noticeably higher top speed; the classic keeps its relaxed tune.
+    const fer = carKind() === 'ferrari';
+    const accel = fer ? 0.024 : 0.018, maxF = fer ? 0.88 : 0.70, maxR = 0.30, friction = 0.030, turn = 0.030;
     if (keys.ArrowUp) car.speed += accel;
     if (keys.ArrowDown) car.speed -= accel;
     car.speed *= (1 - friction);
