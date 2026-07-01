@@ -215,15 +215,87 @@
   }
   function buildCar(kind) { return kind === 'ferrari' ? makeFerrari() : makeClassicCar(); }
 
+  // Draw centred text, shrinking the font until it fits the given width — so long
+  // names like FERRARI never crop, whichever font the browser has active.
+  function fitText(c, text, x, y, basePx, maxWidth, family, weight) {
+    let px = basePx;
+    const w = weight || '800';
+    c.font = w + ' ' + px + 'px ' + family;
+    while (px > 12 && c.measureText(text).width > maxWidth) {
+      px -= 4;
+      c.font = w + ' ' + px + 'px ' + family;
+    }
+    c.fillText(text, x, y);
+  }
+  const _fontRedraws = [];   // all sign draws re-run once the web fonts finish loading
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { for (const fn of _fontRedraws) fn(); });
+  }
+
   // ----- showroom -----
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(110, 110), matFloor); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 18); sc.add(floor);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(130, 130), matFloor); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 8); sc.add(floor);
   // checker accent tiles
-  for (let i = -4; i <= 4; i++) { const t = new THREE.Mesh(new THREE.PlaneGeometry(10, 60), i % 2 ? matFloor2 : matFloor); t.rotation.x = -Math.PI / 2; t.position.set(i * 11, 0.01, 18); sc.add(t); }
-  // boundary walls
-  const WALL = { minX: -52, maxX: 52, minZ: -10, maxZ: 48 };
-  [[0, WALL.minZ, 108, 3], [0, WALL.maxZ, 108, 3], [WALL.minX, 19, 3, 60], [WALL.maxX, 19, 3, 60]].forEach(([x, z, w, d]) => {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 6, d), matWall); wall.position.set(x, 3, z); sc.add(wall);
+  for (let i = -4; i <= 4; i++) { const t = new THREE.Mesh(new THREE.PlaneGeometry(10, 84), i % 2 ? matFloor2 : matFloor); t.rotation.x = -Math.PI / 2; t.position.set(i * 11, 0.01, 8); sc.add(t); }
+  // boundary walls — the south side has a wide garage-door opening you drive in and out of
+  const WALL = { minX: -52, maxX: 52, minZ: -34, maxZ: 48 };
+  const GAP = 10;                     // half-width of the south entrance opening
+  [[0, WALL.maxZ, 108, 3],            // north wall
+   [WALL.minX, 7, 3, 86],             // west wall
+   [WALL.maxX, 7, 3, 86],             // east wall
+   [-(GAP + (52 - GAP) / 2 + 0), WALL.minZ, 52 - GAP, 3],   // south wall, left of the opening
+   [ (GAP + (52 - GAP) / 2 + 0), WALL.minZ, 52 - GAP, 3]]   // south wall, right of the opening
+  .forEach(([x, z, w, d]) => {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 7, d), matWall); wall.position.set(x, 3.5, z); sc.add(wall);
   });
+  // garage-door frame over the opening (header + posts + warm interior glow strip)
+  (function () {
+    const header = new THREE.Mesh(new THREE.BoxGeometry(GAP * 2 + 2, 1.6, 2.4), matWall); header.position.set(0, 6.2, WALL.minZ); sc.add(header);
+    for (const sx of [-GAP - 0.6, GAP + 0.6]) { const post = new THREE.Mesh(new THREE.BoxGeometry(1.2, 7, 2.6), matPed); post.position.set(sx, 3.5, WALL.minZ); sc.add(post); }
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(GAP * 2, 0.18, 0.3), matRing); glow.position.set(0, 5.3, WALL.minZ + 1.3); sc.add(glow);
+  })();
+  // ceiling with cool light strips — kills the void above and reads as a real hall
+  (function () {
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(110, 88), matWall); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 11.5, 7); sc.add(ceil);
+    const matStripLight = new THREE.MeshBasicMaterial({ color: 0xdfe9f5 });
+    for (let r = 0; r < 3; r++) for (let cCol = 0; cCol < 3; cCol++) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(14, 0.15, 1.2), matStripLight);
+      strip.position.set((cCol - 1) * 26, 11.3, -12 + r * 22); sc.add(strip);
+    }
+  })();
+  // structural columns along the side walls (solid — tracked for collision)
+  const columns = [];
+  for (const cx of [WALL.minX + 2.4, WALL.maxX - 2.4]) {
+    for (let cz = -24; cz <= 42; cz += 16) {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(1.4, 11.5, 1.4), matPed);
+      col.position.set(cx, 5.75, cz); sc.add(col);
+      columns.push({ x: cx, z: cz });
+    }
+  }
+  // red carpet runner from the entrance up to the display pedestals
+  (function () {
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(7, 52), new THREE.MeshLambertMaterial({ color: 0x8e2430 }));
+    carpet.rotation.x = -Math.PI / 2; carpet.position.set(0, 0.02, -4); sc.add(carpet);
+    const trim = new THREE.Mesh(new THREE.PlaneGeometry(8, 52), new THREE.MeshLambertMaterial({ color: 0x5e1820 }));
+    trim.rotation.x = -Math.PI / 2; trim.position.set(0, 0.015, -4); sc.add(trim);
+  })();
+  // big glowing wall sign on the north wall, facing the room
+  (function () {
+    const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 256; const c = cv.getContext('2d');
+    const tex = new THREE.CanvasTexture(cv);
+    const drawWall = () => {
+      c.fillStyle = '#10141e'; c.fillRect(0, 0, 1024, 256);
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = '#f08a3c';
+      fitText(c, 'PORTFOLIO GARAGE', 512, 100, 130, 940, 'Syne, sans-serif');
+      c.fillStyle = '#8ea0b8';
+      fitText(c, '— pick your ride —', 512, 204, 44, 900, "'Space Mono', monospace", '700');
+      tex.needsUpdate = true;
+    };
+    drawWall();
+    _fontRedraws.push(drawWall);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(30, 7.5), new THREE.MeshBasicMaterial({ map: tex }));
+    sign.position.set(0, 7.2, WALL.maxZ - 1.6); sign.rotation.y = Math.PI; sc.add(sign);
+  })();
 
   // two display pedestals with the cars + labels
   const DISPLAYS = [
@@ -231,32 +303,47 @@
     { kind: 'ferrari', x: 14, z: 24, label: 'FERRARI', sub: 'red sports' },
   ];
   DISPLAYS.forEach(d => {
+    // warm light pool under the pedestal — sells the "spotlit" look
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(6.4, 28), new THREE.MeshBasicMaterial({ color: 0xffdcae, transparent: true, opacity: 0.10 }));
+    pool.rotation.x = -Math.PI / 2; pool.position.set(d.x, 0.03, d.z); sc.add(pool);
     const ped = new THREE.Mesh(new THREE.CylinderGeometry(5, 5.4, 0.5, 28), matPed); ped.position.set(d.x, 0.25, d.z); sc.add(d._ped = ped);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(5.2, 0.18, 8, 32), matRingDim); ring.rotation.x = Math.PI / 2; ring.position.set(d.x, 0.55, d.z); sc.add(d._ring = ring);
     const turn = new THREE.Group(); turn.position.set(d.x, 0.5, d.z); sc.add(turn); d._turn = turn;
     const carModel = buildCar(d.kind); carModel.scale.set(1.05, 1.05, 1.05); turn.add(carModel);
-    // label sign
+    // label sign — text auto-shrinks to fit and redraws once the web font loads
     const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256; const c = cv.getContext('2d');
-    c.fillStyle = '#0e1622'; c.fillRect(0, 0, 512, 256); c.strokeStyle = '#f08a3c'; c.lineWidth = 10; c.strokeRect(8, 8, 496, 240);
-    c.fillStyle = '#ffffff'; c.textAlign = 'center'; c.font = '800 96px Syne, sans-serif'; c.fillText(d.label, 256, 120);
-    c.fillStyle = '#9fb0c4'; c.font = '700 40px Space Mono, monospace'; c.fillText(d.sub, 256, 190);
     const tex = new THREE.CanvasTexture(cv);
+    const drawLabel = () => {
+      c.fillStyle = '#0e1622'; c.fillRect(0, 0, 512, 256);
+      c.strokeStyle = '#f08a3c'; c.lineWidth = 10; c.strokeRect(8, 8, 496, 240);
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = '#ffffff';
+      fitText(c, d.label, 256, 105, 96, 430, 'Syne, sans-serif');
+      c.fillStyle = '#9fb0c4';
+      fitText(c, d.sub, 256, 195, 40, 430, "'Space Mono', monospace");
+      tex.needsUpdate = true;
+    };
+    drawLabel();
+    _fontRedraws.push(drawLabel);
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(9, 4.5), new THREE.MeshBasicMaterial({ map: tex })); sign.position.set(d.x, 7, d.z + 5.6); sign.rotation.y = Math.PI; sc.add(sign);
   });
 
-  // exit marker on the floor
+  // exit marker on the floor, just inside the garage opening
   (function () {
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const c = cv.getContext('2d');
     c.fillStyle = '#f08a3c'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 54px Arial'; c.fillText('EXIT ↓', 128, 64);
     const tex = new THREE.CanvasTexture(cv);
     const m = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    m.rotation.x = -Math.PI / 2; m.position.set(0, 0.03, -4); sc.add(m);
+    m.rotation.x = -Math.PI / 2; m.position.set(0, 0.03, WALL.minZ + 8); sc.add(m);
   })();
 
   // ----- player car (the one you drive in here) -----
   let selected = carKind();
   let carMesh = buildCar(selected); sc.add(carMesh); carMesh.position.y = 0.1;
-  const car = { x: 0, z: -2, angle: 0, speed: 0 };
+  // spawn well inside the hall, facing the pedestals; camera starts indoors behind the car
+  const car = { x: 0, z: -14, angle: 0, speed: 0 };
+  cam.position.set(0, 7.5, -26);
+  cam.lookAt(0, 1.4, -6);
   function refreshUI() {
     document.getElementById('sel-val').textContent = selected === 'ferrari' ? 'Ferrari' : 'Classic';
     document.getElementById('opt-classic').classList.toggle('sel', selected === 'classic');
@@ -318,7 +405,8 @@
   // ----- physics + selection by proximity -----
   let leaving = false;
   function updatePhysics() {
-    const accel = 0.016, maxF = 0.42, maxR = 0.22, friction = 0.04, turn = 0.04;
+    const fer = selected === 'ferrari';
+    const accel = fer ? 0.019 : 0.016, maxF = fer ? 0.50 : 0.42, maxR = 0.22, friction = 0.04, turn = 0.04;
     if (keys.ArrowUp) car.speed += accel;
     if (keys.ArrowDown) car.speed -= accel;
     car.speed *= (1 - friction);
@@ -326,19 +414,25 @@
     if (Math.abs(car.speed) > 0.004) { const grip = Math.min(1, Math.abs(car.speed) / 0.18), dir = car.speed > 0 ? 1 : -1; if (keys.ArrowLeft) car.angle += turn * grip * dir; if (keys.ArrowRight) car.angle -= turn * grip * dir; }
     car.x += Math.sin(car.angle) * car.speed;
     car.z += Math.cos(car.angle) * car.speed;
-    // keep inside the showroom
+    // keep inside the showroom (the south wall is solid except at the garage opening)
     const m = 2.4;
     if (car.x < WALL.minX + m) { car.x = WALL.minX + m; car.speed *= 0.4; }
     if (car.x > WALL.maxX - m) { car.x = WALL.maxX - m; car.speed *= 0.4; }
     if (car.z > WALL.maxZ - m) { car.z = WALL.maxZ - m; car.speed *= 0.4; }
+    if (car.z < WALL.minZ + m && Math.abs(car.x) >= GAP - 1.2) { car.z = WALL.minZ + m; car.speed *= 0.4; }
     // keep cars from overlapping the pedestals (push out) + select on approach
     DISPLAYS.forEach(d => {
       const dx = car.x - d.x, dz = car.z - d.z, dist = Math.hypot(dx, dz);
       if (dist < 9) chooseCar(d.kind);            // drive up to a car to pick it
       if (dist < 6.2 && dist > 1e-3) { const push = 6.2 - dist; car.x += dx / dist * push; car.z += dz / dist * push; car.speed *= 0.3; }
     });
-    // drive out the south exit → save & return
-    if (!leaving && car.z < WALL.minZ + 1.2 && Math.abs(car.x) < 9) {
+    // solid columns
+    for (const c of columns) {
+      const dx = car.x - c.x, dz = car.z - c.z, dist = Math.hypot(dx, dz);
+      if (dist < 2.2 && dist > 1e-3) { const push = 2.2 - dist; car.x += dx / dist * push; car.z += dz / dist * push; car.speed *= 0.3; }
+    }
+    // drive out through the garage opening → save & return
+    if (!leaving && car.z < WALL.minZ + 1.2 && Math.abs(car.x) < GAP - 1) {
       leaving = true; setCar(selected);
       if (window.__fadeNav) window.__fadeNav(PARK_BACK); else window.location.href = PARK_BACK;
     }
@@ -350,6 +444,13 @@
     const fx = Math.sin(car.angle), fz = Math.cos(car.angle), camDist = 12, camH = 6.2;
     const tx = car.x - fx * camDist, tz = car.z - fz * camDist;
     cam.position.x += (tx - cam.position.x) * 0.10; cam.position.z += (tz - cam.position.z) * 0.10; cam.position.y += (camH - cam.position.y) * 0.10;
+    // never let the camera slip outside the hall (behind a wall = black screen)
+    const cm = 3.2;
+    cam.position.x = Math.max(WALL.minX + cm, Math.min(WALL.maxX - cm, cam.position.x));
+    // allow it out through the garage opening while actually leaving, otherwise hold it inside
+    const inGap = Math.abs(car.x) < GAP - 1 && car.z < WALL.minZ + 10;
+    if (!inGap) cam.position.z = Math.max(WALL.minZ + cm, Math.min(WALL.maxZ - cm, cam.position.z));
+    else cam.position.z = Math.min(WALL.maxZ - cm, cam.position.z);
     cam.lookAt(car.x + fx * 7, 1.4, car.z + fz * 7);
   }
   function loop() {
