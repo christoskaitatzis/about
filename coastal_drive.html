@@ -50,12 +50,16 @@
   #radio .needle { position:absolute; top:2px; bottom:2px; width:2px; background:#c1272d; left: 50%; box-shadow: 0 0 5px rgba(193,39,45,.8); transition: left .5s ease; }
   #radio .now { margin: 7px 0 8px; height: 22px; line-height: 22px; border-radius: 5px; padding: 0 8px; font-size: 10px; letter-spacing: .5px; color: #7be0a0; background: #10201a; border: 1px solid #05100c; box-shadow: inset 0 1px 4px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 6px rgba(123,224,160,.5); }
   #radio.off .now { color: #4a5f56; text-shadow: none; }
-  #radio .row2 { display:flex; align-items:center; gap:10px; }
-  #radio .grille { flex:1; height: 34px; border-radius: 6px; background: repeating-linear-gradient(90deg, #5a3c22 0 3px, #7a5535 3px 6px); border:1px solid #4a3018; box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
-  #radio .knob { position: relative; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-    background: radial-gradient(circle at 35% 30%, #f2f2f2, #b9bdc2 55%, #7d8288 100%); border: 2px solid #55585c; box-shadow: 0 3px 6px rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.6); transition: transform .25s ease; }
-  #radio .knob .ind { position:absolute; top: 4px; left: 50%; width: 3px; height: 11px; margin-left:-1.5px; border-radius: 2px; background: #33373b; }
-  #radio.on .knob { transform: rotate(130deg); }
+  #radio .row2 { display:flex; align-items:flex-end; gap:8px; }
+  #radio .grille { flex:1; height: 42px; border-radius: 6px; background: repeating-linear-gradient(90deg, #5a3c22 0 3px, #7a5535 3px 6px); border:1px solid #4a3018; box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
+  #radio .knobs { display:flex; gap:8px; }
+  #radio .kwrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  #radio .klabel { font: 700 7px 'Space Mono', monospace; letter-spacing: 1px; color:#3a2410; text-shadow:0 1px 0 rgba(255,255,255,.3); }
+  #radio .knob { position: relative; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent;
+    background: radial-gradient(circle at 35% 30%, #f2f2f2, #b9bdc2 55%, #7d8288 100%); border: 2px solid #55585c; box-shadow: 0 3px 6px rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.6); transition: transform .2s ease; }
+  #radio .knob.vol { width: 30px; height: 30px; transition: transform .05s linear; }
+  #radio .knob .ind { position:absolute; top: 4px; left: 50%; width: 3px; height: 10px; margin-left:-1.5px; border-radius: 2px; background: #33373b; }
+  #radio.on #radio-knob { transform: rotate(130deg); }
   #radio .led { position:absolute; top: 12px; left: 14px; width: 8px; height: 8px; border-radius: 50%; background: #4a1410; box-shadow: inset 0 0 3px rgba(0,0,0,.6); }
   #radio.on .led { background: #ff5a3c; box-shadow: 0 0 8px 2px rgba(255,90,60,.8), inset 0 0 2px rgba(255,255,255,.6); }
   #radio.off { filter: saturate(.7) brightness(.96); }
@@ -120,7 +124,10 @@
   <div class="now" id="radio-now">— OFF —</div>
   <div class="row2">
     <div class="grille"></div>
-    <button id="radio-knob" class="knob" type="button" aria-label="Radio power"><span class="ind"></span></button>
+    <div class="knobs">
+      <div class="kwrap"><button id="radio-vol" class="knob vol" type="button" aria-label="Volume"><span class="ind"></span></button><span class="klabel">VOL</span></div>
+      <div class="kwrap"><button id="radio-knob" class="knob" type="button" aria-label="Radio power"><span class="ind"></span></button><span class="klabel">PWR</span></div>
+    </div>
   </div>
   <div class="led"></div>
 </div>
@@ -1688,7 +1695,8 @@
   // fades up — a smooth radio-style crossfade rather than a hard cut.
   const decks = [new Audio(), new Audio()];
   decks.forEach((d) => { d.loop = false; d.volume = 0; d.preload = 'auto'; });
-  const MAX_VOL = 0.5;
+  let MAX_VOL = 0.5;               // current volume level (0..1), set by the VOL knob
+  try { const v = parseFloat(localStorage.getItem('pp_radio_vol')); if (isFinite(v)) MAX_VOL = Math.max(0, Math.min(1, v)); } catch (_) {}
   const FADE = 2.8;                 // crossfade length (seconds)
   const radioEl = document.getElementById('radio');
   const radioNow = document.getElementById('radio-now');
@@ -1777,6 +1785,34 @@
     }
   }
   radioKnob.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); setRadio(!radioOn); });
+
+  // ----- volume knob (turn to adjust) -----
+  const volKnob = document.getElementById('radio-vol');
+  function paintVol() { volKnob.style.transform = 'rotate(' + (-135 + MAX_VOL * 270) + 'deg)'; }
+  function applyVol(v) {
+    MAX_VOL = Math.max(0, Math.min(1, v));
+    paintVol();
+    try { localStorage.setItem('pp_radio_vol', MAX_VOL.toFixed(3)); } catch (_) {}
+    // reflect immediately on the deck that's currently sounding (cancel any live ramp on it)
+    if (radioOn) { const d = decks[cur]; d._rampId = (d._rampId || 0) + 1; if (!d.paused) d.volume = MAX_VOL; }
+  }
+  paintVol();
+  // rotary drag (works for mouse + touch); grabbing anywhere on the knob turns it
+  let volDrag = false, lastAng = 0;
+  const angOf = (e) => { const r = volKnob.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)); };
+  volKnob.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); volDrag = true; lastAng = angOf(e); try { volKnob.setPointerCapture(e.pointerId); } catch (_) {} });
+  volKnob.addEventListener('pointermove', (e) => {
+    if (!volDrag) return;
+    const a = angOf(e); let da = a - lastAng;
+    while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+    lastAng = a;
+    applyVol(MAX_VOL + da / (1.5 * Math.PI));   // ~270° of turn spans the full range
+  });
+  const endVol = (e) => { volDrag = false; try { volKnob.releasePointerCapture(e.pointerId); } catch (_) {} };
+  volKnob.addEventListener('pointerup', endVol);
+  volKnob.addEventListener('pointercancel', endVol);
+  // mouse wheel nudges volume on desktop
+  volKnob.addEventListener('wheel', (e) => { e.preventDefault(); applyVol(MAX_VOL + (e.deltaY < 0 ? 0.05 : -0.05)); }, { passive: false });
 
   // Seamless entry: if we drove in from the park, skip the splash and start at once.
   if (RESUME_RET) startRun();
