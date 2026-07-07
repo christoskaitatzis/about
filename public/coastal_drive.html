@@ -1684,41 +1684,97 @@
   // Turn the knob ON to play; tracks are picked at random and roll into the next one.
   const PLAYLIST = ['powerful_rock.mp3', 'audioknap.mp3', 'music_unlimited.mp3', 'round_round.mp3', 'diamond_tunes_indie.mp3'];
   const prettyName = (f) => f.replace(/\.mp3$/i, '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
-  const radio = new Audio();
-  radio.volume = 0.5;
-  radio.loop = false;
+  // Two audio "decks" that alternate, so the ending track fades down while the next
+  // fades up — a smooth radio-style crossfade rather than a hard cut.
+  const decks = [new Audio(), new Audio()];
+  decks.forEach((d) => { d.loop = false; d.volume = 0; d.preload = 'auto'; });
+  const MAX_VOL = 0.5;
+  const FADE = 2.8;                 // crossfade length (seconds)
   const radioEl = document.getElementById('radio');
   const radioNow = document.getElementById('radio-now');
   const radioNeedle = document.getElementById('radio-needle');
   const radioKnob = document.getElementById('radio-knob');
   let radioOn = false;
+  let cur = 0;                      // index of the active deck
   let lastTrack = -1;
   let failCount = 0;
+  let armed = false;               // has the next track's crossfade been triggered?
 
-  function tuneRandom() {
-    if (PLAYLIST.length === 0) return;
+  function pickIndex() {
+    if (PLAYLIST.length === 0) return -1;
     let i = Math.floor(Math.random() * PLAYLIST.length);
     if (PLAYLIST.length > 1 && i === lastTrack) i = (i + 1) % PLAYLIST.length;
-    lastTrack = i;
-    radio.src = PLAYLIST[i];
-    radioNow.textContent = '♪ ' + prettyName(PLAYLIST[i]);
-    // move the needle to a pseudo-station position for that track
-    radioNeedle.style.left = (12 + (i / Math.max(1, PLAYLIST.length - 1)) * 76) + '%';
-    radio.play().then(() => { failCount = 0; }).catch(() => {});
+    lastTrack = i; return i;
   }
-  radio.addEventListener('ended', () => { if (radioOn) tuneRandom(); });
-  radio.addEventListener('error', () => {
-    // a track failed to load — skip to another, but don't spin forever if all are missing
-    if (radioOn && failCount++ < PLAYLIST.length) tuneRandom();
-    else if (radioOn) { radioNow.textContent = '— NO SIGNAL —'; }
+  function showTrack(i) {
+    radioNow.textContent = '♪ ' + prettyName(PLAYLIST[i]);
+    radioNeedle.style.left = (12 + (i / Math.max(1, PLAYLIST.length - 1)) * 76) + '%';
+  }
+  // ramp a deck's volume over `dur` seconds; newer ramps supersede older ones on the same deck
+  function ramp(deck, to, dur, done) {
+    const id = (deck._rampId = (deck._rampId || 0) + 1);
+    const from = deck.volume, t0 = performance.now();
+    (function step() {
+      if (deck._rampId !== id) return;                 // cancelled by a newer ramp
+      const k = dur <= 0 ? 1 : Math.min(1, (performance.now() - t0) / (dur * 1000));
+      deck.volume = Math.max(0, Math.min(1, from + (to - from) * k));
+      if (k < 1) requestAnimationFrame(step);
+      else if (done) done();
+    })();
+  }
+  // start `i` on the idle deck, fade it up, fade the current one down
+  function crossfadeTo(i, fadeIn) {
+    if (i < 0) return;
+    const outD = decks[cur], inD = decks[cur ^ 1];
+    inD.src = PLAYLIST[i];
+    inD.volume = 0;
+    inD.currentTime = 0;
+    inD.play().then(() => { failCount = 0; }).catch(() => {});
+    showTrack(i);
+    cur ^= 1;                                           // incoming deck is now current
+    armed = false;
+    ramp(inD, MAX_VOL, fadeIn || FADE);
+    if (!outD.paused) ramp(outD, 0, FADE, () => { outD.pause(); });
+  }
+
+  decks.forEach((d) => {
+    // arm the crossfade a little before the current track ends
+    d.addEventListener('timeupdate', function () {
+      if (!radioOn || this !== decks[cur] || armed) return;
+      const dur = this.duration;
+      if (!isFinite(dur) || dur < FADE * 1.5) return;
+      if (dur - this.currentTime <= FADE) crossfadeTo(pickIndex());
+    });
+    // fallback: if a track ends without a crossfade (unknown/short duration), roll on
+    d.addEventListener('ended', function () {
+      if (!radioOn || this !== decks[cur] || armed) return;
+      crossfadeTo(pickIndex(), 0.6);
+    });
+    // a track failed to load — try another, but don't spin forever if all are missing
+    d.addEventListener('error', function () {
+      if (!radioOn || this !== decks[cur]) return;
+      if (failCount++ < PLAYLIST.length) crossfadeTo(pickIndex(), 0.6);
+      else radioNow.textContent = '— NO SIGNAL —';
+    });
   });
 
   function setRadio(on) {
     radioOn = on;
     radioEl.classList.toggle('on', on);
     radioEl.classList.toggle('off', !on);
-    if (on) { failCount = 0; tuneRandom(); }
-    else { radio.pause(); radioNow.textContent = '— OFF —'; }
+    if (on) {
+      failCount = 0; armed = false;
+      const i = pickIndex();
+      const d = decks[cur];
+      d.src = PLAYLIST[i]; d.volume = 0; d.currentTime = 0;
+      d.play().then(() => { failCount = 0; }).catch(() => {});
+      showTrack(i);
+      ramp(d, MAX_VOL, 1.2);                            // gentle fade-in on power-on
+    } else {
+      armed = false;
+      decks.forEach((d) => { if (!d.paused) ramp(d, 0, 0.8, () => d.pause()); });
+      radioNow.textContent = '— OFF —';
+    }
   }
   radioKnob.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); setRadio(!radioOn); });
 
