@@ -90,6 +90,12 @@ const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor(0xeef4f0, 1);
 
+// car choice (shared across all spaces) + resume round-trip with the park
+function carKind() { try { return localStorage.getItem('pp_car') || sessionStorage.getItem('pp_car') || 'classic'; } catch (_) { return 'classic'; } }
+const RESUME_RET = new URLSearchParams(window.location.search).get('ret');
+const PARK_BACK = RESUME_RET ? ('portfolio_park.html?resume=' + encodeURIComponent(RESUME_RET)) : 'portfolio_park.html';
+{ const bl = document.getElementById('back-link'); if (bl) bl.setAttribute('href', PARK_BACK); }
+
 const scene = new THREE.Color ? new THREE.Scene() : null;  // unused safe-init
 const sc = new THREE.Scene();
 sc.background = new THREE.Color(0xeef4f0);
@@ -118,11 +124,58 @@ sc.fog = new THREE.Fog(0x9bd4ff, 220, 500);
 const apron = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0xcfd3d6 }));
 apron.rotation.x = -Math.PI / 2; sc.add(apron);
 
-// Pitch dimensions (scaled down a bit from FIFA standard for gameplay feel)
-const PITCH_W = 50;   // along X
-const PITCH_L = 78;   // along Z
+// Pitch dimensions (bigger now, with an athletics track around it)
+const PITCH_W = 64;   // along X
+const PITCH_L = 100;  // along Z
+// infield (run-off) + track band, as a "stadium" shape (straights + rounded ends on ±Z)
+const IHW = PITCH_W / 2 + 6, IHL = PITCH_L / 2 + 6;   // infield half extents
+const TRACK_W = 12;                                    // track band width
+const OHW = IHW + TRACK_W, OHL = IHL + TRACK_W;        // track outer half extents (50 x 68)
+const STRAIGHT_HALF = OHL - OHW;                        // where the rounded ends begin
 
-// Pitch grass with mowing stripes
+// ---- ground: concourse + terracotta running track + green infield (one textured deck) ----
+(function trackDeck() {
+  const S = 5;                          // px per world unit
+  const DW = 150, DL = 190;             // deck size (world), includes concourse
+  const cv2 = document.createElement('canvas'); cv2.width = DW * S; cv2.height = DL * S;
+  const c = cv2.getContext('2d');
+  const cx = cv2.width / 2, cy = cv2.height / 2;
+  // stadium-shaped path helper (rounded rect; r=hw gives semicircular ends)
+  const rr = (hw, hl, r) => {
+    r = Math.min(r, hw, hl);
+    c.beginPath();
+    c.moveTo(cx - hw + r, cy - hl);
+    c.lineTo(cx + hw - r, cy - hl);
+    c.arcTo(cx + hw, cy - hl, cx + hw, cy - hl + r, r);
+    c.lineTo(cx + hw, cy + hl - r);
+    c.arcTo(cx + hw, cy + hl, cx + hw - r, cy + hl, r);
+    c.lineTo(cx - hw + r, cy + hl);
+    c.arcTo(cx - hw, cy + hl, cx - hw, cy + hl - r, r);
+    c.lineTo(cx - hw, cy - hl + r);
+    c.arcTo(cx - hw, cy - hl, cx - hw + r, cy - hl, r);
+    c.closePath();
+  };
+  // concourse
+  c.fillStyle = '#c7ccd0'; c.fillRect(0, 0, cv2.width, cv2.height);
+  // track surface (terracotta)
+  c.fillStyle = '#b1503a'; rr(OHW * S, OHL * S, OHW * S); c.fill();
+  // lane lines (white), inset from the outer edge inward across the band
+  c.strokeStyle = '#efe9e2'; c.lineWidth = 2.2;
+  for (let i = 0; i <= 8; i++) {
+    const inset = (TRACK_W * i / 8) * S;
+    rr(OHW * S - inset, OHL * S - inset, OHW * S - inset); c.stroke();
+  }
+  // green infield
+  c.fillStyle = '#3a9e50'; rr(IHW * S, IHL * S, IHW * S); c.fill();
+  // a bold white start line across the near straight
+  c.strokeStyle = '#ffffff'; c.lineWidth = 4;
+  c.beginPath(); c.moveTo(cx + IHW * S, cy - 2 * S); c.lineTo(cx + OHW * S, cy - 2 * S); c.stroke();
+  const tex = new THREE.CanvasTexture(cv2);
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(DW, DL), new THREE.MeshLambertMaterial({ map: tex }));
+  deck.rotation.x = -Math.PI / 2; deck.position.y = 0.012; sc.add(deck);
+})();
+
+// Pitch grass with mowing stripes (sits on the infield)
 const stripeCv = document.createElement('canvas'); stripeCv.width = 64; stripeCv.height = 64;
 {
   const c = stripeCv.getContext('2d');
@@ -199,78 +252,119 @@ function makeGoal(zSign) {
 sc.add(makeGoal(-1));
 sc.add(makeGoal(+1));
 
-// Stadium stands — 4 sides, tiered seating in alternating block colors
-function makeStand(width, depth, x, z, rotY) {
-  const g = new THREE.Group();
-  const TIERS = 5, TIER_H = 2.4;
-  const tierD = depth / TIERS;
-  const seatColors = [0x2a55b8, 0xe24a3a, 0x2a55b8, 0xffd23f, 0x2a55b8];
-  for (let t = 0; t < TIERS; t++) {
-    const slab = new THREE.Mesh(
-      new THREE.BoxGeometry(width, TIER_H, tierD),
-      new THREE.MeshLambertMaterial({ color: seatColors[t] })
-    );
-    slab.position.set(0, TIER_H / 2 + t * TIER_H, -depth / 2 + tierD / 2 + t * tierD);
-    g.add(slab);
+// ---- Seating bowl: tall raked stands with a real "wall of seats", roofs, floodlights ----
+// A shared seat texture: rows of coloured seats with aisles + vomitory gaps.
+const seatTex = (function makeSeatTex() {
+  const cv2 = document.createElement('canvas'); cv2.width = 512; cv2.height = 160;
+  const c = cv2.getContext('2d');
+  c.fillStyle = '#181b21'; c.fillRect(0, 0, 512, 160);           // dark base = gaps/steps
+  const cols = ['#2a55b8', '#e24a3a', '#ffd23f', '#e8eef4', '#2a55b8', '#2f8f57'];
+  const rows = 22, seats = 96;
+  const rh = (160 - 8) / rows, sw = (512 - 8) / seats;
+  for (let r = 0; r < rows; r++) {
+    const y = 5 + r * rh;
+    const block = Math.floor(r / 5);                              // horizontal colour tiers
+    for (let s = 0; s < seats; s++) {
+      if (s % 16 === 15) continue;                                // vomitory aisles
+      const x = 5 + s * sw;
+      let col = cols[(block + Math.floor(s / 16)) % cols.length];
+      if ((r * 7 + s * 3) % 29 === 0) col = '#e8eef4';           // sprinkle white for a mosaic feel
+      c.fillStyle = col;
+      c.fillRect(x, y, sw - 1.2, rh - 1.4);
+    }
   }
-  // back wall
-  const back = new THREE.Mesh(
-    new THREE.BoxGeometry(width, TIERS * TIER_H + 1, 0.7),
-    new THREE.MeshLambertMaterial({ color: 0xb0b6bb })
-  );
-  back.position.set(0, (TIERS * TIER_H) / 2, depth / 2);
-  g.add(back);
-  // pitch-side low wall
-  const front = new THREE.Mesh(
-    new THREE.BoxGeometry(width, 1.4, 0.4),
-    new THREE.MeshLambertMaterial({ color: 0xe7eaed })
-  );
-  front.position.set(0, 0.7, -depth / 2 - 0.2);
-  g.add(front);
-  // roof — simple translucent overhang
-  const roof = new THREE.Mesh(
-    new THREE.BoxGeometry(width + 0.6, 0.3, depth * 0.6),
-    new THREE.MeshLambertMaterial({ color: 0x2a3848 })
-  );
-  roof.position.set(0, TIERS * TIER_H + 1.2, depth * 0.1);
-  g.add(roof);
-  g.position.set(x, 0, z);
-  g.rotation.y = rotY;
+  const t = new THREE.CanvasTexture(cv2);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+})();
+
+const facadeMat = new THREE.MeshLambertMaterial({ color: 0xd7dbe0 });
+const roofMat   = new THREE.MeshLambertMaterial({ color: 0x2b3a4a });
+const roofLipMat = new THREE.MeshLambertMaterial({ color: 0xe7eaed });
+const hoardMat  = new THREE.MeshLambertMaterial({ color: 0xf1f4f6 });
+
+const STAND = { depth: 20, frontY: 2.4, backY: 19 };
+function makeStand(length, cx, cz, rotY) {
+  const g = new THREE.Group();
+  const { depth, frontY, backY } = STAND;
+  const rise = backY - frontY, slope = Math.hypot(rise, depth);
+  // raked wall of seats (front at local z=0 low, back at z=-depth high)
+  const tx = seatTex.clone(); tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+  tx.repeat.set(Math.max(2, Math.round(length / 9)), 1); tx.needsUpdate = true;
+  const seat = new THREE.Mesh(new THREE.PlaneGeometry(length, slope),
+    new THREE.MeshLambertMaterial({ map: tx, side: THREE.DoubleSide }));
+  seat.rotation.x = Math.atan2(-depth, rise);
+  seat.position.set(0, (frontY + backY) / 2, -depth / 2);
+  g.add(seat);
+  // pitch-side hoarding wall
+  const hoard = new THREE.Mesh(new THREE.BoxGeometry(length, 2.4, 0.6), hoardMat);
+  hoard.position.set(0, 1.2, 0.4); g.add(hoard);
+  // tall back façade
+  const back = new THREE.Mesh(new THREE.BoxGeometry(length + 1.5, backY + 4, 1.4), facadeMat);
+  back.position.set(0, (backY + 4) / 2, -depth - 0.7); g.add(back);
+  // cantilever roof over the seats
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(length + 2, 0.5, depth * 0.82), roofMat);
+  roof.position.set(0, backY + 4, -depth * 0.5); roof.rotation.x = -0.10; g.add(roof);
+  const lip = new THREE.Mesh(new THREE.BoxGeometry(length + 2, 0.5, 0.5), roofLipMat);
+  lip.position.set(0, backY + 3.4, -depth * 0.08); g.add(lip);
+  // roof support struts
+  for (const sx of [-length * 0.32, 0, length * 0.32]) {
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5, 0.4), facadeMat);
+    strut.position.set(sx, backY + 1.5, -depth - 0.4); g.add(strut);
+  }
+  g.position.set(cx, 0, cz); g.rotation.y = rotY;
   return g;
 }
 
-const STAND_DEPTH = 16;
-const STAND_GAP = 4;  // gap between pitch edge and stand front
-// Behind goals (north/south)
-sc.add(makeStand(PITCH_W + 36, STAND_DEPTH, 0, -(PITCH_L / 2 + STAND_GAP + STAND_DEPTH / 2), 0));
-sc.add(makeStand(PITCH_W + 36, STAND_DEPTH, 0,  (PITCH_L / 2 + STAND_GAP + STAND_DEPTH / 2), Math.PI));
-// Long sides (east/west)
-sc.add(makeStand(PITCH_L + 20, STAND_DEPTH,  (PITCH_W / 2 + STAND_GAP + STAND_DEPTH / 2), 0,  Math.PI / 2));
-sc.add(makeStand(PITCH_L + 20, STAND_DEPTH, -(PITCH_W / 2 + STAND_GAP + STAND_DEPTH / 2), 0, -Math.PI / 2));
+function makeFloodlight(x, z) {
+  const g = new THREE.Group();
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x8a9298 });
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 30, 10), poleMat);
+  pole.position.y = 15; g.add(pole);
+  const rig = new THREE.Mesh(new THREE.BoxGeometry(7, 3.4, 0.6), new THREE.MeshLambertMaterial({ color: 0x30373d }));
+  rig.position.set(0, 30, 0.6); rig.rotation.x = 0.5; g.add(rig);
+  const lampMat = new THREE.MeshBasicMaterial({ color: 0xfffdf0 });
+  for (let r = 0; r < 2; r++) for (let cN = 0; cN < 4; cN++) {
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 0.2), lampMat);
+    lamp.position.set(-2.4 + cN * 1.6, 30 + (r ? 0.8 : -0.8), 1.0); lamp.rotation.x = 0.5; g.add(lamp);
+  }
+  g.position.set(x, 0, z); g.lookAt(0, 20, 0);
+  return g;
+}
 
-// Scoreboards above the north and south stands
+// place the bowl just outside the track (rectangular ring + 45° corner fillers)
+const BX = OHW + 4, BZ = OHL + 4;              // 54 x 72
+const CUT = 30;                                 // corner space for fillers
+sc.add(makeStand(2 * BX - CUT, 0, -BZ, 0));                 // south (behind goal)
+sc.add(makeStand(2 * BX - CUT, 0,  BZ, Math.PI));           // north
+sc.add(makeStand(2 * BZ - CUT,  BX, 0, -Math.PI / 2));      // east (long side)
+sc.add(makeStand(2 * BZ - CUT, -BX, 0,  Math.PI / 2));      // west
+// corner fillers, angled to close the bowl into an octagon
+const corners = [[BX - CUT / 2 + 3, BZ - CUT / 2 + 3], [-(BX - CUT / 2 + 3), BZ - CUT / 2 + 3],
+                 [BX - CUT / 2 + 3, -(BZ - CUT / 2 + 3)], [-(BX - CUT / 2 + 3), -(BZ - CUT / 2 + 3)]];
+for (const [ccx, ccz] of corners) {
+  const inward = Math.atan2(-ccx, -ccz);
+  sc.add(makeStand(CUT + 6, ccx, ccz, inward));
+}
+// floodlight pylons at the four corners
+for (const [ccx, ccz] of corners) sc.add(makeFloodlight(ccx * 1.18, ccz * 1.12));
+
+// Big screens behind each goal, on the back of the N/S stands
 function makeScoreboard(zSign) {
   const g = new THREE.Group();
   const poleMat = new THREE.MeshLambertMaterial({ color: 0x2a3848 });
-  const poleL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 18, 0.5), poleMat);
-  poleL.position.set(-8, 9, 0); g.add(poleL);
-  const poleR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 18, 0.5), poleMat);
-  poleR.position.set( 8, 9, 0); g.add(poleR);
-  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 256;
-  const c = cv.getContext('2d');
+  for (const px of [-9, 9]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.6, 26, 0.6), poleMat); p.position.set(px, 13, 0); g.add(p); }
+  const cv2 = document.createElement('canvas'); cv2.width = 1024; cv2.height = 256;
+  const c = cv2.getContext('2d');
   c.fillStyle = '#0a1530'; c.fillRect(0, 0, 1024, 256);
   c.strokeStyle = '#ffd23f'; c.lineWidth = 10; c.strokeRect(8, 8, 1008, 240);
-  c.fillStyle = '#ffd23f';
-  c.font = "800 110px Syne, sans-serif";
+  c.fillStyle = '#ffd23f'; c.font = "800 110px Syne, sans-serif";
   c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText('WORLD CUP 2026', 512, 130);
-  const tex = new THREE.CanvasTexture(cv);
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(18, 4.5), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
-  screen.position.set(0, 14, 0);
-  // face the pitch
-  screen.rotation.y = zSign > 0 ? Math.PI : 0;
-  g.add(screen);
-  g.position.set(0, 0, zSign * (PITCH_L / 2 + STAND_GAP + STAND_DEPTH + 1));
+  const tex = new THREE.CanvasTexture(cv2);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(22, 5.5), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+  screen.position.set(0, 22, 0); screen.rotation.y = zSign > 0 ? Math.PI : 0; g.add(screen);
+  g.position.set(0, 0, zSign * (BZ + 2));
   return g;
 }
 sc.add(makeScoreboard(-1));
@@ -380,7 +474,59 @@ function makeCar() {
   sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; g.add(sh);
   return g;
 }
-const kart = makeCar();
+// The red sports car (selectable in the car shop).
+function makeFerrari() {
+  const g = new THREE.Group();
+  const red    = new THREE.MeshPhongMaterial({ color: 0xd11414, shininess: 120, specular: 0xff8a7a });
+  const dark   = new THREE.MeshLambertMaterial({ color: 0x141519 });
+  const glass  = new THREE.MeshPhongMaterial({ color: 0x0c0e12, shininess: 120, specular: 0x556070 });
+  const chrome = new THREE.MeshPhongMaterial({ color: 0xcfd4d9, shininess: 130, specular: 0xffffff });
+  const add = (geo, mat, x, y, z, rx, ry, rz) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); if (rx) m.rotation.x = rx; if (ry) m.rotation.y = ry; if (rz) m.rotation.z = rz; g.add(m); return m; };
+  const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+  add(Box(1.9, 0.34, 4.4), red, 0, 0.52, 0);
+  add(Box(1.74, 0.2, 1.5), red, 0, 0.6, 1.62, -0.12);
+  add(Box(2.0, 0.06, 0.5), dark, 0, 0.34, 2.18);
+  add(Box(1.84, 0.4, 2.2), red, 0, 0.82, -0.1);
+  add(Box(1.98, 0.46, 1.7), red, 0, 0.74, -1.45);
+  add(Box(1.3, 0.44, 1.5), glass, 0, 1.12, -0.02);
+  add(Box(1.28, 0.46, 0.1), glass, 0, 1.06, 0.74, 0.62);
+  add(Box(1.18, 0.12, 1.0), red, 0, 1.34, -0.22);
+  add(Box(1.2, 0.4, 0.1), glass, 0, 1.04, -0.96, -0.6);
+  for (let i = 0; i < 4; i++) add(Box(1.0, 0.03, 0.1), dark, 0, 1.0, -1.0 - i * 0.22);
+  add(Box(0.3, 0.34, 1.0), dark, 0.96, 0.86, -1.0);
+  add(Box(0.3, 0.34, 1.0), dark, -0.96, 0.86, -1.0);
+  add(Box(0.12, 0.18, 2.6), dark, 0.95, 0.44, 0);
+  add(Box(0.12, 0.18, 2.6), dark, -0.95, 0.44, 0);
+  const hl = new THREE.MeshPhongMaterial({ color: 0xeaf2ff, emissive: 0x39455e });
+  add(Box(0.5, 0.1, 0.12), hl, 0.62, 0.8, 2.0, 0, -0.28);
+  add(Box(0.5, 0.1, 0.12), hl, -0.62, 0.8, 2.0, 0, 0.28);
+  add(Box(0.5, 0.2, 0.18), dark, 0.56, 0.46, 2.12);
+  add(Box(0.5, 0.2, 0.18), dark, -0.56, 0.46, 2.12);
+  add(Box(0.22, 0.12, 0.18), red, 0.92, 1.0, 0.5);
+  add(Box(0.22, 0.12, 0.18), red, -0.92, 1.0, 0.5);
+  add(Box(0.08, 0.34, 0.3), dark, 0.7, 1.12, -1.95);
+  add(Box(0.08, 0.34, 0.3), dark, -0.7, 1.12, -1.95);
+  add(Box(1.7, 0.06, 0.46), dark, 0, 1.32, -1.98);
+  const tl = new THREE.MeshPhongMaterial({ color: 0xcc1a14, emissive: 0x55100c });
+  add(new THREE.CylinderGeometry(0.16, 0.16, 0.1, 16), tl, 0.6, 0.92, -2.16, Math.PI / 2);
+  add(new THREE.CylinderGeometry(0.16, 0.16, 0.1, 16), tl, -0.6, 0.92, -2.16, Math.PI / 2);
+  add(Box(1.8, 0.24, 0.3), dark, 0, 0.36, -2.08);
+  [-0.36, -0.14, 0.14, 0.36].forEach(ex => add(new THREE.CylinderGeometry(0.07, 0.07, 0.18, 12), chrome, ex, 0.46, -2.2, Math.PI / 2));
+  const tire = new THREE.CylinderGeometry(0.56, 0.56, 0.42, 22);
+  const tireMat = new THREE.MeshLambertMaterial({ color: 0x0f1012 });
+  const alloy = new THREE.MeshPhongMaterial({ color: 0x32353b, shininess: 90, specular: 0xffffff });
+  const caliper = new THREE.MeshLambertMaterial({ color: 0xcc1a1a });
+  [[1.0, 1.4], [-1.0, 1.4], [1.0, -1.4], [-1.0, -1.4]].forEach(([wx, wz]) => {
+    const w = new THREE.Mesh(tire, tireMat); w.rotation.z = Math.PI / 2; w.position.set(wx, 0.56, wz); g.add(w);
+    const face = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.44, 6), alloy); face.rotation.z = Math.PI / 2; face.position.set(wx, 0.56, wz); g.add(face);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.46, 8), chrome); cap.rotation.z = Math.PI / 2; cap.position.set(wx, 0.56, wz); g.add(cap);
+    const cal = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.3, 0.1), caliper); cal.position.set(wx + (wx > 0 ? -0.12 : 0.12), 0.56, wz); g.add(cal);
+  });
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(2.5, 20), shadowMat);
+  sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; g.add(sh);
+  return g;
+}
+const kart = carKind() === 'ferrari' ? makeFerrari() : makeCar();
 sc.add(kart);
 
 // --- Car physics ---
@@ -392,9 +538,10 @@ const car = {
   speed: 0,
 };
 
-// CIRCUIT physics: tuned to feel faster than the park's car
-const MAX_SPEED = 0.95;        // park is ~0.35-0.4
-const ACCEL = 0.022;
+// physics: the Ferrari is quicker; the classic keeps its tune
+const fer = carKind() === 'ferrari';
+const MAX_SPEED = fer ? 1.15 : 0.95;
+const ACCEL = fer ? 0.026 : 0.022;
 const REVERSE_MAX = -0.35;
 const BRAKE = 0.045;
 const COAST = 0.992;
@@ -420,20 +567,25 @@ function updatePhysics() {
   car.x += fx * car.speed;
   car.z += fz * car.speed;
 
-  // Soft pitch boundary — push the car back inside if it strays off the grass.
-  const HX = PITCH_W / 2 - 1.0;
-  const HZ = PITCH_L / 2 - 1.0;
-  if (car.x >  HX) { car.x =  HX; if (car.speed > 0) car.speed *= 0.4; }
-  if (car.x < -HX) { car.x = -HX; if (car.speed > 0) car.speed *= 0.4; }
-  if (car.z >  HZ) { car.z =  HZ; if (car.speed > 0) car.speed *= 0.4; }
-  if (car.z < -HZ) { car.z = -HZ; if (car.speed > 0) car.speed *= 0.4; }
+  // Soft stadium boundary — you can roam the infield AND the running track, but not
+  // into the stands. The limit follows the track's outer "stadium" shape.
+  const LIM = OHW - 1.5;                       // stay just inside the outer track edge
+  const az = Math.abs(car.z);
+  if (az <= STRAIGHT_HALF) {
+    if (car.x >  LIM) { car.x =  LIM; if (car.speed > 0) car.speed *= 0.4; }
+    if (car.x < -LIM) { car.x = -LIM; if (car.speed > 0) car.speed *= 0.4; }
+  } else {
+    const czc = Math.sign(car.z) * STRAIGHT_HALF;
+    const dx = car.x, dz = car.z - czc, d = Math.hypot(dx, dz);
+    if (d > LIM) { const k = LIM / d; car.x = dx * k; car.z = czc + dz * k; if (car.speed > 0) car.speed *= 0.4; }
+  }
 
-  // Portal proximity → navigate back to the park
+  // Portal proximity → navigate back to the park (resuming where you left)
   if (!_navHome) {
     const dx = PORTAL_POS.x - car.x, dz = PORTAL_POS.z - car.z;
     if (Math.hypot(dx, dz) < PORTAL_POS.r) {
       _navHome = true;
-      window.location.href = 'portfolio_park.html';
+      if (window.__fadeNav) window.__fadeNav(PARK_BACK); else window.location.href = PARK_BACK;
     }
   }
 }
