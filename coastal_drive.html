@@ -27,9 +27,39 @@
   }
   #back-link { top: 22px; left: 24px; }
   #fs-toggle  { top: 22px; right: 24px; border: 1px solid #e0e7e2; }
-  #music-toggle { top: 62px; right: 24px; }
-  #tilt-toggle{ top: 102px; right: 24px; display: none; }
+  #tilt-toggle{ top: 62px; right: 24px; display: none; }
   body.mobile #tilt-toggle { display: block; }
+
+  /* ---- vintage radio ---- */
+  #radio {
+    position: fixed; right: 20px; top: 118px; z-index: 9; width: 168px;
+    padding: 10px 12px 12px; border-radius: 14px;
+    background:
+      repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0 2px, rgba(0,0,0,.04) 2px 4px),
+      linear-gradient(150deg, #caa06a 0%, #b07a4f 45%, #9c6b3f 100%);
+    background-blend-mode: overlay, normal;
+    border: 1px solid #6e4a2b; box-shadow: 0 10px 26px -10px rgba(40,25,10,.6), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 6px rgba(0,0,0,.35);
+    font-family: 'Space Mono', monospace; -webkit-user-select: none; user-select: none;
+    transition: filter .3s ease;
+  }
+  #radio .ant { position: absolute; top: -26px; right: 22px; width: 3px; height: 28px; background: linear-gradient(#d8d8d8,#9a9a9a); border-radius: 2px; transform-origin: bottom center; transform: rotate(18deg); }
+  #radio .ant::after { content:''; position:absolute; top:-4px; left:-2px; width:7px; height:7px; border-radius:50%; background:#c9ccd0; }
+  #radio .brand { text-align: center; font: 700 10px 'Space Mono', monospace; letter-spacing: 3px; color: #3a2410; text-shadow: 0 1px 0 rgba(255,255,255,.3); margin-bottom: 6px; }
+  #radio .dial { position: relative; height: 26px; border-radius: 6px; background: linear-gradient(#f6efdc,#e6d8b8); border: 1px solid #7a5732; box-shadow: inset 0 1px 3px rgba(0,0,0,.3); overflow: hidden; }
+  #radio .scale { position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; padding: 0 7px; font-size: 8px; color: #6a4a28; letter-spacing:.5px; }
+  #radio .needle { position:absolute; top:2px; bottom:2px; width:2px; background:#c1272d; left: 50%; box-shadow: 0 0 5px rgba(193,39,45,.8); transition: left .5s ease; }
+  #radio .now { margin: 7px 0 8px; height: 22px; line-height: 22px; border-radius: 5px; padding: 0 8px; font-size: 10px; letter-spacing: .5px; color: #7be0a0; background: #10201a; border: 1px solid #05100c; box-shadow: inset 0 1px 4px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 6px rgba(123,224,160,.5); }
+  #radio.off .now { color: #4a5f56; text-shadow: none; }
+  #radio .row2 { display:flex; align-items:center; gap:10px; }
+  #radio .grille { flex:1; height: 34px; border-radius: 6px; background: repeating-linear-gradient(90deg, #5a3c22 0 3px, #7a5535 3px 6px); border:1px solid #4a3018; box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
+  #radio .knob { position: relative; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    background: radial-gradient(circle at 35% 30%, #f2f2f2, #b9bdc2 55%, #7d8288 100%); border: 2px solid #55585c; box-shadow: 0 3px 6px rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.6); transition: transform .25s ease; }
+  #radio .knob .ind { position:absolute; top: 4px; left: 50%; width: 3px; height: 11px; margin-left:-1.5px; border-radius: 2px; background: #33373b; }
+  #radio.on .knob { transform: rotate(130deg); }
+  #radio .led { position:absolute; top: 12px; left: 14px; width: 8px; height: 8px; border-radius: 50%; background: #4a1410; box-shadow: inset 0 0 3px rgba(0,0,0,.6); }
+  #radio.on .led { background: #ff5a3c; box-shadow: 0 0 8px 2px rgba(255,90,60,.8), inset 0 0 2px rgba(255,255,255,.6); }
+  #radio.off { filter: saturate(.7) brightness(.96); }
+  @media (max-width: 560px) { #radio { width: 150px; transform: scale(.92); transform-origin: top right; } }
 
   #hud {
     position: fixed; top: 64px; left: 24px; z-index: 8; min-width: 200px;
@@ -78,8 +108,22 @@
 
 <a id="back-link" class="pill" href="portfolio_park.html" onclick="event.preventDefault(); window.__fadeNav(this.href); return false;">← back to park</a>
 <button id="fs-toggle" class="pill" type="button">⛶ Fullscreen</button>
-<button id="music-toggle" class="pill" type="button">🎵 Music ON</button>
 <button id="tilt-toggle" class="pill" type="button">📱 Tilt OFF</button>
+
+<div id="radio" class="off" role="group" aria-label="Car radio">
+  <div class="ant"></div>
+  <div class="brand">COAST · FM</div>
+  <div class="dial">
+    <div class="scale"><span>88</span><span>92</span><span>96</span><span>100</span><span>104</span><span>108</span></div>
+    <div class="needle" id="radio-needle"></div>
+  </div>
+  <div class="now" id="radio-now">— OFF —</div>
+  <div class="row2">
+    <div class="grille"></div>
+    <button id="radio-knob" class="knob" type="button" aria-label="Radio power"><span class="ind"></span></button>
+  </div>
+  <div class="led"></div>
+</div>
 
 <div id="hud">
   <div class="row"><span>COASTAL DRIVE</span><span class="val">∞</span></div>
@@ -1634,34 +1678,52 @@
   function startRun() {
     started = true;
     document.getElementById('start').style.display = 'none';
-    // Start music on user gesture (browsers require this)
-    music.play().catch(() => {});
   }
 
-  // ----- background music -----
-  const music = new Audio('powerful_rock.mp3');
-  music.loop = true;
-  music.volume = 0.5;
-  const musicBtn = document.getElementById('music-toggle');
-  musicBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (music.paused) {
-      music.play().catch(() => {});
-      musicBtn.textContent = '🎵 Music ON';
-    } else {
-      music.pause();
-      musicBtn.textContent = '🎵 Music OFF';
-    }
+  // ----- vintage radio -----
+  // Turn the knob ON to play; tracks are picked at random and roll into the next one.
+  const PLAYLIST = ['powerful_rock.mp3', 'audioknap.mp3', 'music_unlimited.mp3', 'round_round.mp3', 'diamond_tunes_indie.mp3'];
+  const prettyName = (f) => f.replace(/\.mp3$/i, '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+  const radio = new Audio();
+  radio.volume = 0.5;
+  radio.loop = false;
+  const radioEl = document.getElementById('radio');
+  const radioNow = document.getElementById('radio-now');
+  const radioNeedle = document.getElementById('radio-needle');
+  const radioKnob = document.getElementById('radio-knob');
+  let radioOn = false;
+  let lastTrack = -1;
+  let failCount = 0;
+
+  function tuneRandom() {
+    if (PLAYLIST.length === 0) return;
+    let i = Math.floor(Math.random() * PLAYLIST.length);
+    if (PLAYLIST.length > 1 && i === lastTrack) i = (i + 1) % PLAYLIST.length;
+    lastTrack = i;
+    radio.src = PLAYLIST[i];
+    radioNow.textContent = '♪ ' + prettyName(PLAYLIST[i]);
+    // move the needle to a pseudo-station position for that track
+    radioNeedle.style.left = (12 + (i / Math.max(1, PLAYLIST.length - 1)) * 76) + '%';
+    radio.play().then(() => { failCount = 0; }).catch(() => {});
+  }
+  radio.addEventListener('ended', () => { if (radioOn) tuneRandom(); });
+  radio.addEventListener('error', () => {
+    // a track failed to load — skip to another, but don't spin forever if all are missing
+    if (radioOn && failCount++ < PLAYLIST.length) tuneRandom();
+    else if (radioOn) { radioNow.textContent = '— NO SIGNAL —'; }
   });
 
-  // Seamless entry: if we drove in from the park, skip the splash and start at once.
-  // Audio can't autoplay without a user gesture, so it kicks in on the first key/tap.
-  if (RESUME_RET) {
-    startRun();
-    const _resumeAudio = () => { music.play().catch(() => {}); window.removeEventListener('keydown', _resumeAudio); window.removeEventListener('pointerdown', _resumeAudio); };
-    window.addEventListener('keydown', _resumeAudio);
-    window.addEventListener('pointerdown', _resumeAudio);
+  function setRadio(on) {
+    radioOn = on;
+    radioEl.classList.toggle('on', on);
+    radioEl.classList.toggle('off', !on);
+    if (on) { failCount = 0; tuneRandom(); }
+    else { radio.pause(); radioNow.textContent = '— OFF —'; }
   }
+  radioKnob.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); setRadio(!radioOn); });
+
+  // Seamless entry: if we drove in from the park, skip the splash and start at once.
+  if (RESUME_RET) startRun();
 
   // ----- fullscreen -----
   const fsBtn = document.getElementById('fs-toggle');
