@@ -21,6 +21,7 @@ const WEB_APPS = [
   { name: 'Fortune Light House', desc: 'Guidance for smart investment selections.', url: 'https://fortunelighthouse.com' },
   { name: 'Concorde', desc: 'Tribute to the Supersonic Legend of the skies.', url: 'https://legendoftheskies.pro' },
   { name: 'Artemis II', desc: 'Spaceflight mission tribute page.', url: 'https://artemismission.space' },
+  { name: 'Widget Board', desc: 'All widgets and tools for your workday in one place.', url: 'https://widgetboard.pro' },
 ]
 
 function ProjectItem({ name, desc, url }) {
