@@ -1,4 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <rect x="2" y="2" width="252" height="252" rx="55" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-  <path fill="#0f172a" d="m210.78 39.25l-130.25-23A16 16 0 0 0 62 29.23l-29.75 169a16 16 0 0 0 13 18.53l130.25 23a16 16 0 0 0 18.54-13l29.75-169a16 16 0 0 0-13.01-18.51M178.26 224L48 201L77.75 32L208 55ZM89.34 58.42a8 8 0 0 1 9.27-6.48l83 14.65a8 8 0 0 1-1.39 15.88a8.4 8.4 0 0 1-1.4-.12l-83-14.66a8 8 0 0 1-6.48-9.27M83.8 89.94a8 8 0 0 1 9.27-6.49l83 14.66a8 8 0 0 1-1.4 15.89a7.6 7.6 0 0 1-1.41-.13l-83-14.65a8 8 0 0 1-6.46-9.28m-5.55 31.51a8 8 0 0 1 9.27-6.45l41.48 7.29a8 8 0 0 1-1.38 15.88a8.3 8.3 0 0 1-1.4-.12l-41.5-7.33a8 8 0 0 1-6.47-9.27"/>
+  <defs>
+    <linearGradient id="cyan" x1="0.05" y1="0" x2="0.95" y2="1">
+      <stop offset="0" stop-color="#63E3EE"/>
+      <stop offset="1" stop-color="#0FB0DC"/>
+    </linearGradient>
+  </defs>
+  <rect x="58" y="30" width="140" height="196" rx="16" fill="url(#cyan)"/>
+  <!-- avatar -->
+  <circle cx="92" cy="70" r="11" fill="#1B57A8"/>
+  <path d="M74 106 a18 18 0 0 1 36 0 z" fill="#1B57A8"/>
+  <!-- header lines next to avatar -->
+  <rect x="126" y="60" width="52" height="10" rx="5" fill="#2A6DC0"/>
+  <rect x="126" y="82" width="36" height="10" rx="5" fill="#2A6DC0"/>
+  <!-- text rows -->
+  <rect x="78" y="132" width="100" height="11" rx="5.5" fill="#164C97"/>
+  <rect x="78" y="154" width="100" height="11" rx="5.5" fill="#2A6DC0"/>
+  <rect x="78" y="176" width="100" height="11" rx="5.5" fill="#164C97"/>
+  <rect x="78" y="198" width="72"  height="11" rx="5.5" fill="#2A6DC0"/>
 </svg>
