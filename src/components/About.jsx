@@ -25,7 +25,7 @@ export default function About() {
         </p>
 
         <h1 className="text-4xl lg:text-[3.00rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-8">
-          Senior Software Engineer<br /></>Mobile (Android) & Web Frontend
+          Senior Software Engineer<br />Mobile (Android) & Web Frontend
         </h1>
 
         <p className="text-slate-600 text-base leading-relaxed mb-5">
@@ -34,12 +34,12 @@ export default function About() {
           clean architecture and maintainable code, shipped end-to-end, including several personal projects from concept to release.
         </p>
         {/* previous */}
-        <p className="text-slate-600 text-base leading-relaxed mb-5">
+        {/* <p className="text-slate-600 text-base leading-relaxed mb-5">
           Architecting reactive mobile and web application systems with a focus on
           scalability and modern design principles. I collaborate with cross-functional
           teams to ship innovative digital products — combining technical depth with
           clean, maintainable code.
-        </p>
+        </p> */}
 
         <p className="text-slate-600 text-base leading-relaxed mb-14">
           Based in Greece. Currently contributing to delivering top-tier software solutions at
