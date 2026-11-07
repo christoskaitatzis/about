@@ -11,6 +11,7 @@ const APPS = [
   { name: 'Momentum', desc: "A mini companion app outlining an engineer's daily workflow and tasks.", url: 'https://play.google.com/store/apps/details?id=io.crossroads.momentum.lite' },
   { name: 'LifeEQ', desc: 'A simple and smart tracker of your everyday life.', url: 'https://play.google.com/store/apps/details?id=io.crossroads.life.eq' },
   { name: 'Parkspace', desc: 'Parking spots sharing.', url: null },
+  { name: 'Delta - Tyre Strategist', desc: 'Tyre strategy preditions for F1 races.', url: 'https://play.google.com/store/apps/details?id=io.crossroads.delta.strategist' },
   { name: 'Chronicles of the Seventh Age: Part I', desc: 'A Saga of the Distant Future — Short novel e-book.', url: 'https://play.google.com/store/apps/details?id=io.chronicles.saga.part.one' },
   { name: 'Chronicles of the Seventh Age: Part II', desc: 'Beyond Known Universe — Short novel e-book.', url: 'https://play.google.com/store/apps/details?id=io.chronicles.saga.part.two' },
 ]
