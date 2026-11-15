@@ -20,6 +20,8 @@ const WEB_APPS = [
   { name: 'Deskstart.co', desc: 'Your everyday prework check, ensure connection stability, microphone and camera are ready for your workday.', url: 'https://deskstart.co' },
   { name: 'CommentBase.io', desc: 'Documentation platform for teams to create projects and sharable pages with AI insights of their code snippets.', url: 'https://commentbase.io' },
   { name: 'Stories of New York', desc: 'Architectural landmarks of the city of New York.', url: 'https://storiesofnewyork.city' },
+  { name: 'Starship Flght Game', desc: 'Launch Starship, reach orbit, deploy the payload, reentry and back to earth with spacecraft catch. Control the Starship from launch to catch in this fun space-flight emulator!', url: 'https://starshipflight.space' },
+
   { name: 'Fortune Light House', desc: 'Guidance for smart investment selections.', url: 'https://fortunelighthouse.com' },
   { name: 'Concorde', desc: 'Tribute to the Supersonic Legend of the skies.', url: 'https://legendoftheskies.pro' },
   { name: 'Artemis II', desc: 'Spaceflight mission tribute page.', url: 'https://artemismission.space' },
