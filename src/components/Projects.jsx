@@ -17,6 +17,8 @@ const APPS = [
 ]
 
 const WEB_APPS = [
+  { name: 'Rivetize App', desc: 'An AI-powered web app that turns a software team's daily notes and screenshots into small, estimated tickets and a fair day's plan for each person.', url: 'https://rivetize.app' },
+
   { name: 'Deskstart.co', desc: 'Your everyday prework check, ensure connection stability, microphone and camera are ready for your workday.', url: 'https://deskstart.co' },
   { name: 'CommentBase.io', desc: 'Documentation platform for teams to create projects and sharable pages with AI insights of their code snippets.', url: 'https://commentbase.io' },
   { name: 'Stories of New York', desc: 'Architectural landmarks of the city of New York.', url: 'https://storiesofnewyork.city' },
